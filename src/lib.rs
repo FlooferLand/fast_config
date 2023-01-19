@@ -36,7 +36,18 @@ compile_error!("You must select at least one format: `json5`, `toml`, or `yaml`"
 /// ```
 /// use fast_config::{ConfigOptions, Config};
 ///
-/// // .. MyData definition here
+/// // Creating a config struct to store our data
+/// #[derive(Serialize, Deserialize)]
+/// pub struct MyData {
+///     #[serde(default = "MyDataDefaults::some_data")]
+///     pub some_data: i32
+/// }
+///
+/// // Storing the default values for our data
+/// pub struct MyDataDefaults;
+/// impl MyDataDefaults {
+///     pub fn some_data() -> i32 { 123 }
+/// }
 ///
 /// fn main() {
 ///     let options = ConfigOptions {
@@ -82,6 +93,8 @@ impl Default for ConfigOptions {
 ///
 /// Here is a code example on how you could define the data to pass into the constructors on this class:
 /// ```
+/// use serde::{Serialize, Deserialize};
+///
 /// // Creating a config struct to store our data
 /// #[derive(Serialize, Deserialize)]
 /// struct MyData {
