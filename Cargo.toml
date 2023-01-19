@@ -10,10 +10,12 @@ categories = ["config"]
 license-file = "./LICENSE"
 documentation = "https://docs.rs/fast_config"
 
+[dev-dependencies]
+env_logger = "0.10.0"
+
 [dependencies]
 serde = { version = "1.0.152", features = ["serde_derive", "derive"] }
 log = "0.4.17"
-env_logger = "0.10.0"
 
 # Optional
 json5 = { version = "0.4.1",  optional = true }
@@ -22,6 +24,5 @@ serde_yaml = { version = "0.9.16",  optional = true }
 serde_json = { version = "1.0.91", optional = true }
 
 [features]
-default = ["json5"]
 json5 = ["dep:json5", "dep:serde_json"]
 yaml  = ["dep:serde_yaml"]

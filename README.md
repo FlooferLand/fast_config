@@ -54,8 +54,8 @@ While I haven't managed to find any bugs, documentation might be a little weird 
 
 ## Examples:
 ```rust
-use fast_config::Config;
 use serde::{Serialize, Deserialize};
+use fast_config::Config;
 
 // Creating a config struct to store our data
 #[derive(Serialize, Deserialize)]
@@ -90,14 +90,15 @@ fn main() {
 ## Getting started
 
 1. Add the crate to your project <br/> `cargo add fast_config`
+---
 2. Enable a feature for the format you'd like to use <br/>
    - Currently only `json5`, `toml`, and `yaml` are supported <br/>
    - Please note that currently only *one* feature can be enabled at the same time
+---
 3. Create a struct for your data that derives `serde::Serialize` and `serde::Deserialize`
-4. Use
-   ```rust
-   let my_config = Config::<MyData>::new("..");
-   ```
+---
+4. Use <br/>
+   `let my_config = Config::<MyData>::new("..");` <br/>
    to create and store your config file(s)!
 
 ---

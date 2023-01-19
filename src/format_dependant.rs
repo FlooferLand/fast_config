@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde::de::Error;
-use crate::{ConfigOptions, utils};
+use crate::ConfigOptions;
 
 
 
@@ -29,6 +28,7 @@ pub fn to_string<D>(value: &D, options: &ConfigOptions) -> Result<String, serde_
         true => serde_json::to_string_pretty(value),
         false => {
             // Changing the error type to return the same Result type
+            use serde::de::Error;
             let res = json5::to_string(value);
             match res {
                 Ok(string) => Ok(string),
@@ -46,7 +46,7 @@ pub fn to_string<D>(value: &D, options: &ConfigOptions) -> Result<String, toml::
             if string.is_err() {
                 return Err(string.err().unwrap());
             }
-            Ok(utils::compress_string(string.unwrap()))
+            Ok(crate::utils::compress_string(string.unwrap()))
         },
     }
 }
@@ -59,7 +59,7 @@ pub fn to_string<D>(value: &D, options: &ConfigOptions) -> Result<String, serde_
     let string = string.unwrap();
     match options.pretty {
         true  => Ok(string),
-        false => Ok(utils::compress_string(string))
+        false => Ok(crate::utils::compress_string(string))
     }
 }
 
