@@ -316,11 +316,21 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         let to_string = format_dependant::to_string(&self.data, &self.options);
         match to_string {
             Ok(data) => {
-                let mut file = fs::File::create(&self.path).expect("Could not open the config file! (saving)");
+                let mut file = match fs::File::create(&self.path) {
+                    Ok(file) => file,
+                    Err(_) => {
+                        // If the file could not be saved
+                        if let Some(parent_dir) = self.path.parent() {
+                            let _ = fs::create_dir_all(parent_dir);
+                        }
+                        fs::File::create(&self.path)
+                            .expect("Could not open the config file while saving!\n- Does the path to the file still exist?")
+                    }
+                };
                 write!(file, "{data}").expect("Could not save the config file!");
             },
             Err(e) => {
-                error!("{e}\n\t^ This error sometime seems to mean a data type you're using isn't supported!")
+                error!("{e}\n\t^ This error sometimes seems to mean a data type you're using in your custom data struct isn't supported!")
             }
         };
     }
