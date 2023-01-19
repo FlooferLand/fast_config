@@ -24,5 +24,6 @@ serde_yaml = { version = "0.9.16",  optional = true }
 serde_json = { version = "1.0.91", optional = true }
 
 [features]
+default = []
 json5 = ["dep:json5", "dep:serde_json"]
 yaml  = ["dep:serde_yaml"]
