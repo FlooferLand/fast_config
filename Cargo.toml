@@ -1,12 +1,13 @@
 [package]
 name = "fast_config"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["FlooferLand"]
 description = "A small and simple multi-format crate to handle config files"
+repository = "https://github.com/FlooferLand/fast_config"
 keywords = ["settings", "config", "configuration", "easy", "json5"]
 categories = ["config"]
-license-file = "LICENSE"
+license-file = "./LICENSE"
 
 [dependencies]
 serde = { version = "1.0.152", features = ["serde_derive", "derive"] }

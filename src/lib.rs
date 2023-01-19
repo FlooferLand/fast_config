@@ -1,5 +1,7 @@
 //! A small and easy-to-use Rust crate to handle config files.
-//! Currently supports JSON5, TOML, and YAML. But more formats are planned to be added later.
+//! Currently supports JSON5, TOML, and YAML. But more formats will probably be added later.
+//!
+//! Check the [Github examples directory](https://github.com/FlooferLand/fast_config/tree/main/examples) for examples.
 
 mod format_dependant;
 mod utils;
@@ -35,6 +37,7 @@ compile_error!("You must select at least one format: `json5`, `toml`, or `yaml`"
 /// # Examples:
 /// ```
 /// use fast_config::{ConfigOptions, Config};
+/// use serde::{Serialize, Deserialize};
 ///
 /// // Creating a config struct to store our data
 /// #[derive(Serialize, Deserialize)]

@@ -1,5 +1,3 @@
-use std::ffi::OsStr;
-use std::path::Path;
 use serde::{Deserialize, Serialize};
 use serde::de::Error;
 use crate::{ConfigOptions, utils};
@@ -58,7 +56,7 @@ pub fn to_string<D>(value: &D, options: &ConfigOptions) -> Result<String, serde_
     if string.is_err() {
         return Err(string.err().unwrap());
     }
-    let mut string = string.unwrap();
+    let string = string.unwrap();
     match options.pretty {
         true  => Ok(string),
         false => Ok(utils::compress_string(string))
