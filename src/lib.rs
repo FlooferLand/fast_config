@@ -1,7 +1,4 @@
-//! A small and easy-to-use Rust crate to handle config files.
-//! Currently supports JSON5, TOML, and YAML. But more formats will probably be added later.
-//!
-//! Check the [Github examples directory](https://github.com/FlooferLand/fast_config/tree/main/examples) for examples.
+#![doc = include_str!("../README.md")]
 
 mod format_dependant;
 mod utils;
