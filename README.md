@@ -2,12 +2,12 @@ fast_config
 =============
 ---
 
-![github](https://img.shields.io/badge/github-fast_config-lightgray.svg?logo=github&style=for-the-badge)
-![crates.io](https://img.shields.io/crates/v/fast_config?style=for-the-badge)
+[<img alt="github" src="https://img.shields.io/badge/github-fast_config-lightgray.svg?logo=github&style=for-the-badge"/>](https://github.com/FlooferLand/fast_config)
+[<img alt="crates.io" src="https://img.shields.io/crates/v/fast_config?style=for-the-badge"/>](https://crates.io/crates/fast_config)
 <br style="display: block; margin: 0 0; content: '---'" />
-![GitHub](https://img.shields.io/github/license/flooferland/fast_config?flat)
-![gitHub code size in bytes](https://img.shields.io/github/languages/code-size/flooferland/fast_config?style=flat)
-![gitHub issues](https://img.shields.io/github/issues/flooferland/fast_config?label=open%20issues&style=flat)
+[<img alt="license" src="https://img.shields.io/github/license/FlooferLand/fast_config?flat"/>](https://github.com/FlooferLand/fast_config/blob/main/LICENSE)
+[<img alt="code size" src="https://img.shields.io/github/languages/code-size/FlooferLand/fast_config?style=flat"/>](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+[<img alt="issues" src="https://img.shields.io/github/issues/FlooferLand/fast_config?label=open%20issues&style=flat"/>](https://github.com/FlooferLand/fast_config/issues)
 
 A small and easy-to-use Rust crate to handle config files.
 Currently only supports: JSON5, TOML, and YAML.
