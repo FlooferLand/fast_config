@@ -1,4 +1,4 @@
-use simple_config::{Config, ConfigOptions};
+use fast_config::{Config, ConfigOptions};
 use serde::{Serialize, Deserialize};
 
 // Sub-structs

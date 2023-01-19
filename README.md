@@ -1,13 +1,13 @@
-simple_config
+fast_config
 =============
 ---
 
-![github](https://img.shields.io/badge/github-simple_config-lightgray.svg?logo=github&style=for-the-badge)
-![crates.io](https://img.shields.io/crates/v/simple_config?style=for-the-badge)
+![github](https://img.shields.io/badge/github-fast_config-lightgray.svg?logo=github&style=for-the-badge)
+![crates.io](https://img.shields.io/crates/v/fast_config?style=for-the-badge)
 <br style="display: block; margin: 0 0; content: '---'" />
-![GitHub](https://img.shields.io/github/license/flooferland/simple_config?flat)
-![gitHub code size in bytes](https://img.shields.io/github/languages/code-size/flooferland/simple_config?style=flat)
-![gitHub issues](https://img.shields.io/github/issues/flooferland/simple_config?label=open%20issues&style=flat)
+![GitHub](https://img.shields.io/github/license/flooferland/fast_config?flat)
+![gitHub code size in bytes](https://img.shields.io/github/languages/code-size/flooferland/fast_config?style=flat)
+![gitHub issues](https://img.shields.io/github/issues/flooferland/fast_config?label=open%20issues&style=flat)
 
 A small and easy-to-use Rust crate to handle config files.
 Currently only supports: JSON5, TOML, and YAML.
@@ -28,7 +28,7 @@ While I haven't managed to find any bugs myself, documentation might be a little
 
 ## Examples:
 ```rust
-use simple_config::Config;
+use fast_config::Config;
 use serde::{Serialize, Deserialize};
 
 // Creating a config struct to store our data

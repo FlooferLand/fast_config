@@ -34,7 +34,7 @@ compile_error!("You must select at least one format: `json5`, `toml`, or `yaml`"
 ///
 /// # Examples:
 /// ```
-/// use simple_config::{ConfigOptions, Config};
+/// use fast_config::{ConfigOptions, Config};
 ///
 /// // .. MyData definition here
 ///

@@ -1,4 +1,4 @@
-use simple_config::Config;
+use fast_config::Config;
 use serde::{Serialize, Deserialize};
 
 // Creating a config struct to store our data
