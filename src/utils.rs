@@ -1,4 +1,5 @@
 // Gets rid of unnecessary lines
+#[cfg(any(feature = "toml", feature = "yaml"))]
 pub fn compress_string(string: String) -> String {
     let mut result = String::new();
     for line in string.split('\n') {
