@@ -15,6 +15,28 @@ But more formats are planned to be added later.
 
 ---
 
+### UPDATE:
+I've accidentally stumbled across a crate with the exact same name my crate had,
+made by someone with way more experience than me,
+who's crate also does the exact same things but better.
+
+I swear I checked Crates.io right before naming my project `simple_config`
+
+Either way, this project is now called `fast_config`, because it's the only name available.
+Feel free to check out the other, way better `simple_config` [here](https://crates.io/crates/simple_config).
+*(I don't have any affiliation with it, only bad luck by crates.io somehow bugging out when i chose the original name)*
+
+**I will still continue work on this project, for use in my own projects,
+but I wouldn't recommend other people using it XD**
+
+---
+
+<br/>
+
+<br/>
+
+<br/>
+
 ## Why this crate?
 - It's small and fast *(uses compile-time features to remove any unnecessary code)*
 - It's safe and robust *(uses Rust's structs to store data, instead of HashMaps)*
