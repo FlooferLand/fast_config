@@ -53,7 +53,7 @@ While I haven't managed to find any bugs, documentation might be a little weird 
 ---
 
 ## Examples:
-```rust
+```rust,ignore
 use serde::{Serialize, Deserialize};
 use fast_config::Config;
 
