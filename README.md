@@ -1,14 +1,15 @@
-fast_config
+`fast_config`
 =============
 ---
 
-[<img alt="github" src="https://img.shields.io/badge/github-fast_config-lightgray.svg?logo=github&style=for-the-badge"/>](https://github.com/FlooferLand/fast_config)
+[<img alt="github" src="https://img.shields.io/badge/github-fast_config-brightgreen.svg?logo=github&style=for-the-badge"/>](https://github.com/FlooferLand/fast_config)
 [<img alt="crates.io" src="https://img.shields.io/crates/v/fast_config?logo=rust&style=for-the-badge"/>](https://crates.io/crates/fast_config)
-[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-fast_config-lightgray.svg?logo=rust&style=for-the-badge"/>](https://docs.rs/fast_config)
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-fast_config-988.svg?logo=rust&style=for-the-badge"/>](https://docs.rs/fast_config)
 <br style="display: block; margin: 0 0; content: '---'" />
 [<img alt="license" src="https://img.shields.io/github/license/FlooferLand/fast_config?style=flat"/>](https://github.com/FlooferLand/fast_config/blob/main/LICENSE)
 [<img alt="code size" src="https://img.shields.io/github/languages/code-size/FlooferLand/fast_config?style=flat"/>](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 [<img alt="issues" src="https://img.shields.io/github/issues/FlooferLand/fast_config?label=open%20issues&style=flat"/>](https://github.com/FlooferLand/fast_config/issues)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/FlooferLand/fast_config/rust.yml)
 
 A small, lightweight, and easy-to-use Rust crate to handle config files.
 
@@ -54,28 +55,26 @@ While I haven't managed to find any bugs, documentation might be a little weird 
 
 ## Examples:
 ```rust,ignore
-use serde::{Serialize, Deserialize};
 use fast_config::Config;
+use serde::{Serialize, Deserialize};
 
 // Creating a config struct to store our data
 #[derive(Serialize, Deserialize)]
 pub struct MyData {
-    #[serde(default = "MyDataDefaults::student_debt")]
     pub student_debt: i32
-}
-
-// Storing the default values for our data
-pub struct MyDataDefaults;
-impl MyDataDefaults {
-    pub fn student_debt() -> i32 { 20 }
 }
 
 fn main() {
     // Initializing a logging system (needed to show errors)
     env_logger::init();
 
+    // Creating our data (default values)
+    let data = MyData {
+        student_debt: 20
+    };
+
     // Creating a new config struct with our data struct (it can also guess the file extension)
-    let mut config = Config::<MyData>::new("./config/myconfig");
+    let mut config = Config::<MyData>::new("./config/myconfig", data);
 
     // Read/writing to the data
     println!("I am ${} in debt", config.data.student_debt);

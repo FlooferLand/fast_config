@@ -1,7 +1,6 @@
 #![doc = include_str!("../README.md")]
-// TODO: ^ Use #![doc = include_str!("../README.md")] instead.
-//         Currently it can't be used because it runs doc tests
 
+mod extensions;
 mod format_dependant;
 mod utils;
 
@@ -11,13 +10,12 @@ use log::error;
 use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
 
-// TODO: Fix this very ugly code
-#[cfg(all(feature = "json5", feature = "toml"))]
-compile_error!("JSON5 and TOML support is mutually exclusive and cannot be enabled together");
-#[cfg(all(feature = "json5", feature = "yaml"))]
-compile_error!("JSON5 and YAML support is mutually exclusive and cannot be enabled together");
-#[cfg(all(feature = "toml", feature = "yaml"))]
-compile_error!("TOML and YAML support is mutually exclusive and cannot be enabled together");
+// CHECKED?: Make all file formats usable in the same project by making a FileFormat enum
+//       and disabling the struct entries based on the enabled features
+
+// TODO: Finish rewriting the documentation for methods / structs
+
+// TODO: Add in an option to automatically save the config when the Config object is dropped
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
 compile_error!("You must select at least one format: `json5`, `toml`, or `yaml`");
@@ -26,12 +24,29 @@ compile_error!("You must select at least one format: `json5`, `toml`, or `yaml`"
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+use strum_macros::EnumIter;
+
+#[cfg_attr(test, derive(EnumIter))]
+pub enum ConfigFormat {
+    JSON5,
+    TOML,
+    YAML,
+    None
+}
+
 /// Used to configure the [`Config`] object
 ///
 /// # Attributes
 /// - `pretty` - Makes the contents of the config file more readable.
 /// When false, it will try to compact down the config file data so it takes up less storage space.
-/// *I recommend you keep it on* as most modern systems have enough space to handle spaces and newline characters, even at scale.
+/// *I recommend you keep it on* as most modern systems have enough space to handle
+/// spaces and newline characters, even at scale.
+///
+/// - `format` - An enum to specify the format language to use *(ex: JSON, TOML, etc.)* <br/>
+/// Takes in an enum of type [`ConfigFormat`]
+/// It's [`ConfigFormat::None`] by default, but it will try to guess the format based on
+/// the file format and/or enabled features.
 ///
 /// # More options are to be added later!
 /// Pass `..` [`Default::default()`] at the end of your construction
@@ -39,45 +54,45 @@ mod tests;
 ///
 /// # Examples:
 /// ```no_run
-/// use fast_config::{ConfigOptions, Config};
+/// use fast_config::{ConfigOptions, ConfigFormat, Config};
 /// use serde::{Serialize, Deserialize};
 ///
 /// // Creating a config struct to store our data
 /// #[derive(Serialize, Deserialize)]
 /// pub struct MyData {
-///     #[serde(default = "MyDataDefaults::some_data")]
 ///     pub some_data: i32
-/// }
-///
-/// // Storing the default values for our data
-/// pub struct MyDataDefaults;
-/// impl MyDataDefaults {
-///     pub fn some_data() -> i32 { 123 }
 /// }
 ///
 /// fn main() {
 ///     let options = ConfigOptions {
 ///         pretty: false,
+///         format: ConfigFormat::JSON5,
 ///         .. Default::default()
 ///     };
 ///
-///     let mut config = Config::<MyData>::from_options("./config/myconfig.json5", options);
+///     let data = MyData {
+///         some_data: 12345
+///     };
+///
+///     let mut config = Config::<MyData>::from_options("./config/myconfig.json5", options, data);
 ///     // [.. do stuff here]
 /// }
 /// ```
 ///
 pub struct ConfigOptions {
-    pub pretty: bool
+    pub pretty: bool,
+    pub format: ConfigFormat
 }
 impl Default for ConfigOptions {
     fn default() -> Self {
         Self {
-            pretty: true
+            pretty: true,
+            format: ConfigFormat::None
         }
     }
 }
 
-/// The main class you use to create/access configuration data!
+/// The main class you use to create/access your configuration files!
 ///
 /// # Construction
 /// See [`Config::new`] and [`Config::from_options`] if you wish to construct a new Config!
@@ -94,9 +109,6 @@ impl Default for ConfigOptions {
 /// In most cases you can just use `#[derive(Serialize, Deserialize)]` to derive them.
 ///
 ///
-/// You can also use `#[serde(default = "..")]` to define the default values for your data.
-/// This does however require you pass in a callable *(such as a function)*, seemingly due to a Serde macro limitation.
-///
 /// Here is a code example on how you could define the data to pass into the constructors on this class:
 /// ```
 /// use serde::{Serialize, Deserialize};
@@ -104,14 +116,14 @@ impl Default for ConfigOptions {
 /// // Creating a config struct to store our data
 /// #[derive(Serialize, Deserialize)]
 /// struct MyData {
-///     #[serde(default = "MyDataDefaults::student_debt")]
 ///     pub student_debt: i32,
 /// }
 ///
-/// // Storing the default values for our data
-/// pub struct MyDataDefaults;
-/// impl MyDataDefaults {
-///     pub fn student_debt() -> i32 { 20 }
+/// fn main() {
+///     let data = MyData {
+///         student_debt: 20
+///     };
+///     // ..
 /// }
 /// ```
 /// Implementing [`Serialize`] and [`Deserialize`] yourself is quite complicated but will provide the most flexibility.
@@ -131,9 +143,13 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// - `path`: Takes in a path to where the config file is or should be located.
     /// If the file has no extension, the extension will be guessed using the enabled feature
     ///
+    /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
+    /// You have to make this struct yourself, construct it, and pass it in.
+    /// More info is provided at [`Config`].
+    ///
     /// If you'd like to configure this object, you should take a look at using [`Config::from_options`] instead.
-    pub fn new(path: impl AsRef<Path>) -> Self {
-        Self::construct(path, ConfigOptions::default())
+    pub fn new(path: impl AsRef<Path>, data: D) -> Self {
+        Self::construct(path, ConfigOptions::default(), data)
     }
 
     /// Constructs and returns a new config object from a set of custom options.
@@ -144,21 +160,35 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// If the file has no extension, the extension will be guessed using the enabled feature
     ///
     /// - `options`: Takes in a [`ConfigOptions`], used to configure the styling of the data among other things.
-    pub fn from_options(path: impl AsRef<Path>, options: ConfigOptions) -> Self {
-        Self::construct(path, options)
+    ///
+    /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
+    /// You have to make this struct yourself, construct it, and pass it in.
+    /// More info is provided at [`Config`].
+    pub fn from_options(path: impl AsRef<Path>, options: ConfigOptions, data: D) -> Self {
+        Self::construct(path, options, data)
     }
 
     // Main, private constructor
-    fn construct(path: impl AsRef<Path>, options: ConfigOptions) -> Self {
+    fn construct(path: impl AsRef<Path>, mut options: ConfigOptions, mut data: D) -> Self {
         let mut path = PathBuf::from(path.as_ref());
 
         // Adding an extension if no extension was found
         if path.extension().is_none() {
-            path.set_extension(format_dependant::get_extension());
+            path.set_extension(format_dependant::get_extension(&options.format));
+        }
+
+        // Guessing the format based on the extension (if there is any)
+        if let Some(ext) = path.extension() {
+            let ext = ext.to_str().unwrap_or("").to_lowercase();
+            options.format = match ext.as_str() {
+                "json" | "json5" => ConfigFormat::JSON5,
+                "toml" => ConfigFormat::TOML,
+                "yaml" => ConfigFormat::YAML,
+                _ => ConfigFormat::None
+            }
         }
 
         // Making sure there's a config file
-        let mut file_content = String::new();
         if !path.exists() {
             // Creating the directories leading up to the config file
             match path.parent() {
@@ -170,26 +200,26 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             }
 
             // Creating the config file itself
-            let mut file = fs::File::create(&path).expect("Could not create the config file!");
-            file_content = format_dependant::get_default_data();
-            write!(file, "{}", file_content).expect("Could not initialize the config file!");
+            fs::File::create(&path).expect("Could not create the config file!");
         } else {
             // Reading from the file if a file was found
+            let mut content = String::new();
             let mut file = fs::File::open(&path).expect("Could not open the config file!");
-            file.read_to_string(&mut file_content).expect("File content isn't valid UTF-8!");
-        }
-
-        // Creating the config data
-        let data = format_dependant::from_string(file_content.as_str())
-            .expect(
+            file.read_to_string(&mut content).expect("File content isn't valid UTF-8!");
+            data = format_dependant::from_string(&content, &options.format).expect(
                 format!(
                     "Config file isn't valid according to it's format! ({})",
-                    format_dependant::get_extension()
+                    format_dependant::get_extension(&options.format)
                 ).as_str()
             );
+        }
 
         // Creating the Config object
-        Self { data, path, options }
+        Self {
+            data,
+            path,
+            options
+        }
     }
 
     /// Saves the config file to the disk.

@@ -12,22 +12,20 @@ pub struct Person {
 // Creating a config struct to store our data
 #[derive(Serialize, Deserialize)]
 pub struct MyData {
-    #[serde(default = "MyDataDefaults::student_debt")]
     pub student_debt: i32,
-
-    #[serde(default = "MyDataDefaults::person")]
     pub person: Person
 }
 
-// Storing the default values for our data
-pub struct MyDataDefaults;
-impl MyDataDefaults {
-    pub fn student_debt() -> i32 { 20 }
-    pub fn person() -> Person {
-        Person {
-            name: format!("Joe Mama"),
-            age: 400,
-            skill_issue: true
+// Setting the default values for the data
+impl Default for MyData {
+    fn default() -> Self {
+        Self {
+            student_debt: 20,
+            person: Person {
+                name: format!("Joe Mama"),
+                age: 400,
+                skill_issue: true
+            }
         }
     }
 }
@@ -39,11 +37,15 @@ fn main() {
     // Creating options
     let options = ConfigOptions {
         pretty: false,
-        ..Default::default()
+        .. Default::default()
     };
 
     // Creating a new config struct with our data struct (it can also guess the file extension)
-    let mut config = Config::<MyData>::from_options("./config/compressed/myconfig", options);
+    let mut config = Config::<MyData>::from_options(
+        "./config/compressed/myconfig",
+        options,
+        MyData::default()
+    );
 
     // Read/writing to the data
     println!("I am ${} in debt", config.data.student_debt);

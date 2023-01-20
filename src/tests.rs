@@ -1,8 +1,9 @@
-use crate::{Config, ConfigOptions};
+use crate::{Config, ConfigFormat, ConfigOptions};
 use serde::{Serialize, Deserialize};
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
-#[test]
-fn main() {
+fn run(format: ConfigFormat) {
     // Sub-data
     #[derive(Serialize, Deserialize)]
     pub struct SubData {
@@ -14,38 +15,32 @@ fn main() {
     // Data
     #[derive(Serialize, Deserialize)]
     pub struct MyData {
-        #[serde(default = "MyDataDefaults::number")]
         pub number: i32,
-
-        #[serde(default = "MyDataDefaults::subdata")]
         pub subdata: SubData
     }
 
-    // Data defaults
-    pub struct MyDataDefaults;
-    impl MyDataDefaults {
-        pub fn number() -> i32 { 20 }
-        pub fn subdata() -> SubData {
-            SubData {
-                string:   format!("Joe Mama"),
-                unsigned: 400,
-                boolean:  true
-            }
-        }
-    }
-
     // Logging system test
-    env_logger::init();
     log::info!("Test started!");
 
     // Creating options
     let options = ConfigOptions {
         pretty: false,
+        format,
         ..Default::default()
     };
 
+    // Data defaults
+    let data = MyData {
+        number: 20,
+        subdata: SubData {
+            string:   format!("Joe Mama"),
+            unsigned: 400,
+            boolean:  true
+        }
+    };
+
     // Creating the config and saving it
-    let mut config = Config::<MyData>::from_options("./config/testconfig", options);
+    let mut config = Config::<MyData>::from_options("./config/testconfig", options, data);
     config.data.number = i32::MAX;
     config.save();
 
@@ -56,5 +51,13 @@ fn main() {
         Err(e) => {
             log::error!("{e}");
         }
+    }
+}
+
+#[test]
+fn main() {
+    env_logger::init();
+    for format in ConfigFormat::iter() {
+        run(format)
     }
 }

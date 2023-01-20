@@ -12,6 +12,8 @@ documentation = "https://docs.rs/fast_config"
 
 [dev-dependencies]
 env_logger = "0.10.0"
+strum = "0.24.1"
+strum_macros = "0.24.3"
 
 [dependencies]
 serde = { version = "1.0.152", features = ["serde_derive", "derive"] }
