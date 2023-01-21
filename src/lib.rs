@@ -17,6 +17,10 @@ use std::path::{Path, PathBuf};
 
 // TODO: Add in an option to automatically save the config when the Config object is dropped
 
+// TODO: Add in a way to check which feature should be enabled based on the file extension
+//       .. If there is no file extension, guess the user wants to use the only enabled feature
+//          so users could only have one feature enabled (like JSON5) and it'll guess automatically
+
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
 compile_error!("You must select at least one format: `json5`, `toml`, or `yaml`");
 
