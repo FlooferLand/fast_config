@@ -24,26 +24,50 @@ fn run() {
         pub subdata: SubData
     }
 
+    impl Default for MyData {
+        fn default() -> Self {
+            Self {
+                number: 20,
+                subdata: SubData {
+                    string:   format!("Joe Mama"),
+                    unsigned: 400,
+                    boolean:  true
+                }
+            }
+        }
+    }
+
     // Creating options
     let options = ConfigOptions {
         pretty: false,
         ..Default::default()
     };
 
-    // Data defaults
-    let data = MyData {
-        number: 20,
-        subdata: SubData {
-            string:   format!("Joe Mama"),
-            unsigned: 400,
-            boolean:  true
-        }
-    };
-
     // Creating the config and saving it
-    let mut config = Config::<MyData>::from_options("./config/testconfig", options, data);
-    config.data.number = i32::MAX;
-    config.save();
+    {
+        let mut config = Config::<MyData>::from_options("./config/testconfig", options, MyData::default());
+        config.data.number = i32::MAX;
+        config.save();
+    }
+
+    // Reading from that config + assertions
+    {
+        // Test data
+        let data = MyData {
+            number: 0,
+            subdata: SubData {
+                string:   String::new(),
+                unsigned: 0,
+                boolean:  false
+            }
+        };
+        let config = Config::<MyData>::new("./config/testconfig", data);
+        let default = MyData::default();
+        assert_eq!(config.data.number, i32::MAX);
+        assert_eq!(config.data.subdata.string, default.subdata.string);
+        assert_eq!(config.data.subdata.unsigned, default.subdata.unsigned);
+        assert_eq!(config.data.subdata.boolean, default.subdata.boolean);
+    }
 
     // Cleanup
     std::thread::sleep(std::time::Duration::from_millis(30));
