@@ -2,17 +2,6 @@ use serde::{Deserialize, Serialize};
 use crate::{ConfigFormat, ConfigOptions};
 use crate::extensions::{GenericResult, ResultGeneralize};
 
-
-pub fn get_extension<'a>(format: &ConfigFormat) -> &'a str {
-    match format {
-        ConfigFormat::JSON5 => ".json5",
-        ConfigFormat::TOML  => ".toml",
-        ConfigFormat::YAML  => ".yaml",
-        ConfigFormat::None => ""
-    }
-}
-
-
 // Creates a new string from an existing data object
 pub fn to_string<D>(value: &D, options: &ConfigOptions) -> GenericResult<String> where D: Serialize {
     match options.format {
@@ -46,7 +35,7 @@ pub fn to_string<D>(value: &D, options: &ConfigOptions) -> GenericResult<String>
             }
         },
 
-        _ => Err("No format selected").generalize()
+        _ => Err("No format selected (to_string)").generalize()
     }
 }
 
@@ -68,7 +57,7 @@ pub fn from_string<'a, D>(value: &'a String, format: &ConfigFormat) -> GenericRe
             fserde_yaml::from_str::<D>(value).generalize(),
 
         _ =>
-            Err("No format selected").generalize()
+            Err("No format selected (from_string)").generalize()
     }
 }
 

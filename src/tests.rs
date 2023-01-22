@@ -1,7 +1,7 @@
+use log::LevelFilter;
 use crate::{Config, ConfigFormat, ConfigOptions};
 use serde::{Serialize, Deserialize};
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
 
 fn run(format: ConfigFormat) {
     // Sub-data
@@ -18,9 +18,6 @@ fn run(format: ConfigFormat) {
         pub number: i32,
         pub subdata: SubData
     }
-
-    // Logging system test
-    log::info!("Test started!");
 
     // Creating options
     let options = ConfigOptions {
@@ -56,8 +53,13 @@ fn run(format: ConfigFormat) {
 
 #[test]
 fn main() {
-    env_logger::init();
+    env_logger::builder()
+        .filter_level(LevelFilter::Info)
+        .init();
     for format in ConfigFormat::iter() {
-        run(format)
+        if format != ConfigFormat::None {
+            log::info!("Testing {format:?}..");
+            run(format)
+        }
     }
 }

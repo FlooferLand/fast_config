@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 //          so users could only have one feature enabled (like JSON5) and it'll guess automatically
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
-compile_error!("You must select at least one format: `json5`, `toml`, or `yaml`");
+compile_error!("You must install at least one format feature: `json5`, `toml`, or `yaml`");
 
 // Bug testing
 #[cfg(test)]
@@ -31,12 +31,35 @@ mod tests;
 #[cfg(test)]
 use strum_macros::EnumIter;
 
+#[derive(Debug, PartialEq)]
 #[cfg_attr(test, derive(EnumIter))]
 pub enum ConfigFormat {
     JSON5,
     TOML,
     YAML,
     None
+}
+impl ConfigFormat {
+    fn from_extension(ext: &str) -> Self {
+        match ext.to_lowercase().as_str() {
+            "json" | "json5" => ConfigFormat::JSON5,
+            "toml"           => ConfigFormat::TOML,
+            "yaml" | "yml"   => ConfigFormat::YAML,
+            _ => ConfigFormat::None
+        }
+    }
+
+    fn get_extension(&self) -> String {
+        match self {
+            ConfigFormat::None => {
+                error!("Invalid format!");
+                String::new()
+            }
+            _ => {
+                format!(".{self:?}").to_lowercase()
+            }
+        }
+    }
 }
 
 /// Used to configure the [`Config`] object
@@ -49,7 +72,7 @@ pub enum ConfigFormat {
 ///
 /// - `format` - An enum to specify the format language to use *(ex: JSON, TOML, etc.)* <br/>
 /// Takes in an enum of type [`ConfigFormat`]
-/// It's [`ConfigFormat::None`] by default, but it will try to guess the format based on
+/// It's [`ConfigFormat::None`] by default, but it will also try to guess the format based on
 /// the file format and/or enabled features.
 ///
 /// # More options are to be added later!
@@ -68,17 +91,20 @@ pub enum ConfigFormat {
 /// }
 ///
 /// fn main() {
+///     // Creating the options
 ///     let options = ConfigOptions {
 ///         pretty: false,
 ///         format: ConfigFormat::JSON5,
 ///         .. Default::default()
 ///     };
 ///
+///     // Creating the data and setting it's default values
 ///     let data = MyData {
 ///         some_data: 12345
 ///     };
 ///
-///     let mut config = Config::<MyData>::from_options("./config/myconfig.json5", options, data);
+///     // Creating the config itself
+///     let mut config = Config::<MyData>::from_options("./config/myconfig", options, data);
 ///     // [.. do stuff here]
 /// }
 /// ```
@@ -103,7 +129,7 @@ impl Default for ConfigOptions {
 ///
 /// # Data
 /// This class stores data using a struct you define yourself.
-/// This allows for the most amount of performance and safety in most scenarios,
+/// This allows for the most amount of performance and safety,
 /// while also allowing you to add additional features by adding `impl` blocks on your struct.
 ///
 /// [`Serialize`]: serde::Serialize
@@ -124,6 +150,7 @@ impl Default for ConfigOptions {
 /// }
 ///
 /// fn main() {
+///     // Making our data and setting its default values
 ///     let data = MyData {
 ///         student_debt: 20
 ///     };
@@ -161,9 +188,11 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// If there's not a file at `path`, the file will automatically be generated.
     ///
     /// - `path`: Takes in a path to where the config file is or should be located.
-    /// If the file has no extension, the extension will be guessed using the enabled feature
+    /// If the file has no extension, the extension will be guessed based on the enabled feature
+    /// (or the selected format in your `options`)
     ///
-    /// - `options`: Takes in a [`ConfigOptions`], used to configure the styling of the data among other things.
+    /// - `options`: Takes in a [`ConfigOptions`],
+    /// used to configure the format language, styling of the data, and other things.
     ///
     /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
     /// You have to make this struct yourself, construct it, and pass it in.
@@ -176,20 +205,24 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     fn construct(path: impl AsRef<Path>, mut options: ConfigOptions, mut data: D) -> Self {
         let mut path = PathBuf::from(path.as_ref());
 
-        // Adding an extension if no extension was found
-        if path.extension().is_none() {
-            path.set_extension(format_dependant::get_extension(&options.format));
+        // Guessing the file format
+        if let Some(ext) = path.extension() {
+            let ext = ext.to_str().unwrap_or("");
+            if options.format == ConfigFormat::None {
+                let new_format = ConfigFormat::from_extension(ext);
+                if new_format == ConfigFormat::None {
+                    error!("Could not guess the file format!");
+                }
+            }
+        } else {
+            // Adding an extension if no extension was found
+            path.set_extension(options.format.get_extension());
         }
 
         // Guessing the format based on the extension (if there is any)
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap_or("").to_lowercase();
-            options.format = match ext.as_str() {
-                "json" | "json5" => ConfigFormat::JSON5,
-                "toml" => ConfigFormat::TOML,
-                "yaml" => ConfigFormat::YAML,
-                _ => ConfigFormat::None
-            }
+            options.format = ConfigFormat::from_extension(ext.as_str());
         }
 
         // Making sure there's a config file
@@ -213,7 +246,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             data = format_dependant::from_string(&content, &options.format).expect(
                 format!(
                     "Config file isn't valid according to it's format! ({})",
-                    format_dependant::get_extension(&options.format)
+                    options.format.get_extension()
                 ).as_str()
             );
         }
@@ -258,7 +291,8 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
                 write!(file, "{data}").expect("Could not save the config file!");
             },
             Err(e) => {
-                error!("{e}\n\t^ This error sometimes seems to mean a data type you're using in your custom data struct isn't supported!")
+                error!("{e}");
+                // error!("{e}\n\t^ This error sometimes seems to mean a data type you're using in your custom data struct isn't supported!");
             }
         };
     }
