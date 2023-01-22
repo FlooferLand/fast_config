@@ -1,14 +1,17 @@
 name: Rust
 
+# Triggered when pushing/pulling
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
+# Pretty cargo stuff
 env:
   CARGO_TERM_COLOR: always
 
+# Jobs
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,10 +21,15 @@ jobs:
           - stable
           - beta
           - nightly
+        format:
+          - json5
+          - toml
+          - yaml
     steps:
     - uses: actions/checkout@v3
-    - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+    - name: Update toolchain
+      run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose --features ${{ matrix.format }}
