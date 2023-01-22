@@ -1,9 +1,14 @@
 use log::LevelFilter;
-use crate::{Config, ConfigFormat, ConfigOptions};
+use crate::{Config, ConfigOptions};
 use serde::{Serialize, Deserialize};
-use strum::IntoEnumIterator;
 
-fn run(format: ConfigFormat) {
+#[test]
+fn run() {
+    // Logging
+    env_logger::builder()
+        .filter_level(LevelFilter::Info)
+        .init();
+
     // Sub-data
     #[derive(Serialize, Deserialize)]
     pub struct SubData {
@@ -22,7 +27,6 @@ fn run(format: ConfigFormat) {
     // Creating options
     let options = ConfigOptions {
         pretty: false,
-        format,
         ..Default::default()
     };
 
@@ -47,19 +51,6 @@ fn run(format: ConfigFormat) {
         Ok(_) => {}
         Err(e) => {
             log::error!("{e}");
-        }
-    }
-}
-
-#[test]
-fn main() {
-    env_logger::builder()
-        .filter_level(LevelFilter::Info)
-        .init();
-    for format in ConfigFormat::iter() {
-        if format != ConfigFormat::None {
-            log::info!("Testing {format:?}..");
-            run(format)
         }
     }
 }

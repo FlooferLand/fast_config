@@ -2,6 +2,15 @@ use serde::{Deserialize, Serialize};
 use crate::{ConfigFormat, ConfigOptions};
 use crate::extensions::{GenericResult, ResultGeneralize};
 
+// Getting the enabled features via code
+pub fn get_enabled_features() -> Vec<ConfigFormat> {
+    let mut vector = Vec::new();
+    #[cfg(feature = "json5")] vector.push(ConfigFormat::JSON5);
+    #[cfg(feature = "toml")]  vector.push(ConfigFormat::TOML);
+    #[cfg(feature = "yaml")]  vector.push(ConfigFormat::YAML);
+    vector
+}
+
 // Creates a new string from an existing data object
 pub fn to_string<D>(value: &D, options: &ConfigOptions) -> GenericResult<String> where D: Serialize {
     match options.format {
@@ -54,7 +63,7 @@ pub fn from_string<'a, D>(value: &'a String, format: &ConfigFormat) -> GenericRe
 
         #[cfg(feature = "yaml")]
         ConfigFormat::YAML =>
-            fserde_yaml::from_str::<D>(value).generalize(),
+            serde_yaml::from_str::<D>(value).generalize(),
 
         _ =>
             Err("No format selected (from_string)").generalize()

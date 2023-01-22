@@ -73,8 +73,8 @@ fn main() {
         student_debt: 20
     };
 
-    // Creating a new config struct with our data struct (it can also guess the file extension)
-    let mut config = Config::<MyData>::new("./config/myconfig", data);
+    // Creating a new config struct with our data struct
+    let mut config = Config::<MyData>::new("./config/myconfig.json5", data);
 
     // Read/writing to the data
     println!("I am ${} in debt", config.data.student_debt);
@@ -89,7 +89,9 @@ fn main() {
 ## Getting started
 
 1. Add the crate to your project <br/> `cargo add fast_config`
+
 ---
+
 2. Enable a feature for the format you'd like to use <br/>
    - Currently only `json5`, `toml`, and `yaml` are supported <br/>
    - Please note that currently only *one* feature can be enabled at the same time

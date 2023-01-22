@@ -4,6 +4,7 @@ mod extensions;
 mod format_dependant;
 mod utils;
 
+use std::fmt::Formatter;
 use std::fs;
 use std::io::{Read, Write};
 use log::error;
@@ -28,16 +29,17 @@ compile_error!("You must install at least one format feature: `json5`, `toml`, o
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-use strum_macros::EnumIter;
-
-#[derive(Debug, PartialEq)]
-#[cfg_attr(test, derive(EnumIter))]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ConfigFormat {
     JSON5,
     TOML,
     YAML,
     None
+}
+impl std::fmt::Display for ConfigFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!(".{self:?}").to_lowercase())
+    }
 }
 impl ConfigFormat {
     fn from_extension(ext: &str) -> Self {
@@ -206,23 +208,37 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         let mut path = PathBuf::from(path.as_ref());
 
         // Guessing the file format
-        if let Some(ext) = path.extension() {
-            let ext = ext.to_str().unwrap_or("");
-            if options.format == ConfigFormat::None {
-                let new_format = ConfigFormat::from_extension(ext);
-                if new_format == ConfigFormat::None {
-                    error!("Could not guess the file format!");
-                }
-            }
+        if options.format == ConfigFormat::None && path.extension().is_some() {
+            // - Based on the extension
+            let ext = path.extension().unwrap();
+            let ext = ext.to_str().expect("Expected a valid UTF-8 extension");
+            options.format = ConfigFormat::from_extension(ext);
         } else {
-            // Adding an extension if no extension was found
-            path.set_extension(options.format.get_extension());
+            // - Based on the enabled features
+            let features = format_dependant::get_enabled_features();
+            // match features.first() {
+            //     Some(value) => {
+            //         options.format = value.clone();
+            //     }
+            //     None => {}
+            // }
+            if let Some(first) = features.first() {
+                // If there is one feature
+                options.format = *first;
+            } else if features.len() == 0 {
+                // If there is no feature
+                panic!("No file formats installed or selected. You must enable at least one format feature");
+            } else {
+                // If there are multiple features
+                options.format = features[0];
+                log::warn!("Too many format features enabled, with no format specified in the extension or the config's settings.");
+                log::warn!("Defaulting to picking the first available format.. ({:?})", options.format);
+            }
         }
 
-        // Guessing the format based on the extension (if there is any)
-        if let Some(ext) = path.extension() {
-            let ext = ext.to_str().unwrap_or("").to_lowercase();
-            options.format = ConfigFormat::from_extension(ext.as_str());
+        // Setting the file format
+        if path.extension().is_none() {
+            path.set_extension(options.format.get_extension());
         }
 
         // Making sure there's a config file
