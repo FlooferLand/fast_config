@@ -23,6 +23,12 @@
 			"args": ["--features", "yaml"],
 			"type": "cargo",
 			"command": "test"
+		},
+		{
+			"label": "rust: cargo test (ALL)",
+			"args": ["--features", "json5,toml,yaml"],
+			"type": "cargo",
+			"command": "test"
 		}
 	]
 }

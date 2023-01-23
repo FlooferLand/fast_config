@@ -1,0 +1,14 @@
+name: Advanced test
+on: workflow_dispatch
+
+# Triggering the advanced test
+env:
+  ADVANCED_TEST: "true"
+
+# Triggering main_test
+jobs:
+  advanced_test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - run: echo "Starting advanced tests.."

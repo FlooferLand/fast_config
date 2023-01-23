@@ -26,6 +26,9 @@ compile_error!("You must install at least one format feature: `json5`, `toml`, o
 #[cfg(test)]
 mod tests;
 
+/// The object you use to configure the file format
+/// 
+/// You use it in [`ConfigOptions`]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ConfigFormat {
     JSON5,
