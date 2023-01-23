@@ -11,6 +11,24 @@ pub fn get_enabled_features() -> Vec<ConfigFormat> {
     vector
 }
 
+// Getting a singular enabled feature
+pub fn get_first_enabled_feature() -> ConfigFormat {
+    let features = get_enabled_features();
+    if let Some(first) = features.first() {
+        // If there is one feature
+        *first
+    } else if features.len() == 0 {
+        // If there is no feature
+        panic!("No file formats installed or selected. You must enable at least one format feature");
+    } else {
+        // If there are multiple features
+        let first = features[0];
+        log::warn!("Too many format features enabled, with no format specified in the extension or the config's settings.");
+        log::warn!("Defaulting to picking the first available format.. ({:?})", &first);
+        first
+    }
+}
+
 // Creates a new string from an existing data object
 pub fn to_string<D>(value: &D, options: &ConfigOptions) -> GenericResult<String> where D: Serialize {
     match options.format {

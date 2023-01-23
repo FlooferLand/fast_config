@@ -1,5 +1,5 @@
 use log::LevelFilter;
-use crate::{Config, ConfigOptions, ConfigFormat};
+use crate::{Config, ConfigOptions, format_dependant};
 use serde::{Serialize, Deserialize};
 
 // Sub-data
@@ -88,35 +88,41 @@ fn run() {
 // TODO: Advanced test code should be refactored as it looks incredibly messy.
 //       Doesn't really matter due to the fact it's a test, though
 fn advanced_test() {
-    pub enum FormatFinder<'a> {
-        GuessExtension(&'a str),
+    #[derive(Debug)]
+    pub enum FormatFinder {
+        GuessExtension(String),
         Config(crate::ConfigFormat),
         Feature
     }
     
-    pub struct Case<'a> {
-        pub format_finder: FormatFinder<'a>,
+    #[derive(Debug)]
+    pub struct Case {
+        pub format_finder: FormatFinder,
         pub pretty: bool
     }
-    impl<'a> Case<'a> {
-        pub fn new(format_finder: FormatFinder<'a>, pretty: bool) -> Self {
+    impl Case {
+        pub fn new(format_finder: FormatFinder, pretty: bool) -> Self {
             Self { format_finder, pretty }
         }
     }
 
     // Adding all different possible cases
-    // <!> Could probably be made slightly faster by being moved into an array via a macro
-    let extensions = ["json", "toml", "yaml"];
-    let mut cases = Vec::with_capacity((extensions.len() * 3) * 2);
+    // <!> Could probably be made slightly faster and cleaner by
+    //     being moved into an array via a macro
+    let available = format_dependant::get_enabled_features();
+    let mut cases = Vec::with_capacity(
+        3    /* `push` calls */
+        * 2  /* `pretty` */
+    );
     let mut pretty = false;
     for _ in 0..2 {
-        for ext in extensions {
+        for format in &available {
             cases.push(Case::new(
-                FormatFinder::GuessExtension(ext),
+                FormatFinder::GuessExtension(format.to_string()),
                 pretty
             ));
             cases.push(Case::new(
-                FormatFinder::Config(ConfigFormat::from_extension(ext)),
+                FormatFinder::Config(format.clone()),
                 pretty
             ));
             cases.push(Case::new(
@@ -154,7 +160,7 @@ fn advanced_test() {
             config.data.number = i32::MAX;
             config.save();
         }
-
+ 
         // Reading from that config + assertions
         {
             // Test data

@@ -4,7 +4,6 @@ mod extensions;
 mod format_dependant;
 mod utils;
 
-use std::fmt::Formatter;
 use std::fs;
 use std::io::{Read, Write};
 use log::error;
@@ -13,14 +12,12 @@ use std::path::{Path, PathBuf};
 
 // CHECKED?: Make all file formats usable in the same project by making a FileFormat enum
 //       and disabling the struct entries based on the enabled features
+// ^------- Needs to be further tested!
 
 // TODO: Finish rewriting the documentation for methods / structs
+// TODO: Add panic notifiers in the documentation
 
 // TODO: Add in an option to automatically save the config when the Config object is dropped
-
-// TODO: Add in a way to check which feature should be enabled based on the file extension
-//       .. If there is no file extension, guess the user wants to use the only enabled feature
-//          so users could only have one feature enabled (like JSON5) and it'll guess automatically
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
 compile_error!("You must install at least one format feature: `json5`, `toml`, or `yaml`");
@@ -35,11 +32,6 @@ pub enum ConfigFormat {
     TOML,
     YAML,
     None
-}
-impl std::fmt::Display for ConfigFormat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", format!(".{self:?}").to_lowercase())
-    }
 }
 impl ConfigFormat {
     fn from_extension(ext: &str) -> Self {
@@ -64,15 +56,16 @@ impl ConfigFormat {
             _ => ConfigFormat::None
         }
     }
-
-    fn get_extension(&self) -> String {
+}
+impl ToString for ConfigFormat {
+    fn to_string(&self) -> String {
         match self {
             ConfigFormat::None => {
                 error!("Invalid format!");
                 String::new()
             }
             _ => {
-                format!(".{self:?}").to_lowercase()
+                format!("{self:?}").to_lowercase()
             }
         }
     }
@@ -229,30 +222,12 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             options.format = ConfigFormat::from_extension(ext);
         } else {
             // - Based on the enabled features
-            let features = format_dependant::get_enabled_features();
-            // match features.first() {
-            //     Some(value) => {
-            //         options.format = value.clone();
-            //     }
-            //     None => {}
-            // }
-            if let Some(first) = features.first() {
-                // If there is one feature
-                options.format = *first;
-            } else if features.len() == 0 {
-                // If there is no feature
-                panic!("No file formats installed or selected. You must enable at least one format feature");
-            } else {
-                // If there are multiple features
-                options.format = features[0];
-                log::warn!("Too many format features enabled, with no format specified in the extension or the config's settings.");
-                log::warn!("Defaulting to picking the first available format.. ({:?})", options.format);
-            }
+            options.format = format_dependant::get_first_enabled_feature();
         }
 
         // Setting the file format
         if path.extension().is_none() {
-            path.set_extension(options.format.get_extension());
+            path.set_extension(options.format.to_string());
         }
 
         // Making sure there's a config file
@@ -275,8 +250,12 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             file.read_to_string(&mut content).expect("File content isn't valid UTF-8!");
             data = format_dependant::from_string(&content, &options.format).expect(
                 format!(
-                    "Config file isn't valid according to it's format! ({})",
-                    options.format.get_extension()
+                    "Config file isn't valid according to it's format! ({})\
+                    You might want to:\
+                    1. Check that the format feature you're trying to use is enabled in your `cargo.toml` (JSON, TOML, YAML, etc)\
+                    2. Check that your data is valid (some types like vectors and custom types cannot be converted to Serde by default, you might want to implement Deserialize and Serialize for them manually)\
+                    3. Report this bug to the project's \"Issues\" page if nothing seems to be solving the issue (https://github.com/FlooferLand/fast_config/issues)",
+                    options.format.to_string()
                 ).as_str()
             );
         }
