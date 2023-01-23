@@ -1,12 +1,12 @@
 #![doc = include_str!("../README.md")]
 
+mod error;
 mod extensions;
 mod format_dependant;
 mod utils;
 
 use std::fs;
 use std::io::{Read, Write};
-use log::error;
 use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
 
@@ -25,6 +25,11 @@ compile_error!("You must install at least one format feature: `json5`, `toml`, o
 // Bug testing
 #[cfg(test)]
 mod tests;
+
+
+// Separated things
+pub use error::*;
+
 
 /// The object you use to configure the file format
 /// 
@@ -64,7 +69,7 @@ impl ToString for ConfigFormat {
     fn to_string(&self) -> String {
         match self {
             ConfigFormat::None => {
-                error!("Invalid format!");
+                log::error!("Invalid format!");
                 String::new()
             }
             _ => {
@@ -73,6 +78,7 @@ impl ToString for ConfigFormat {
         }
     }
 }
+
 
 /// Used to configure the [`Config`] object
 ///
@@ -133,6 +139,7 @@ impl Default for ConfigOptions {
         }
     }
 }
+
 
 /// The main class you use to create/access your configuration files!
 ///
@@ -303,7 +310,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
                 write!(file, "{data}").expect("Could not save the config file!");
             },
             Err(e) => {
-                error!("{e}");
+                log::error!("{e}");
                 // error!("{e}\n\t^ This error sometimes seems to mean a data type you're using in your custom data struct isn't supported!");
             }
         };

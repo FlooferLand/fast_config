@@ -25,6 +25,7 @@ jobs:
           - json5
           - toml
           - yaml
+          - json5,toml,yaml
     steps:
     - uses: actions/checkout@v3
     - name: Update toolchain

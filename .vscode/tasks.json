@@ -7,10 +7,7 @@
 			"label": "rust: cargo test (JSON)",
 			"args": ["--features", "json5"],
 			"type": "cargo",
-			"command": "test",
-			"env": {
-				"advanced_test": "true"
-			}
+			"command": "test"
 		},
 		{
 			"label": "rust: cargo test (TOML)",
@@ -28,7 +25,10 @@
 			"label": "rust: cargo test (ALL)",
 			"args": ["--features", "json5,toml,yaml"],
 			"type": "cargo",
-			"command": "test"
+			"command": "test",
+			"env": {
+				"ADVANCED_TEST": "true"
+			}
 		}
 	]
 }

@@ -44,7 +44,7 @@ fn run() {
 
     // Creating the config and saving it
     {
-        let mut config = Config::<MyData>::from_options("./config/testconfig", options, MyData::default());
+        let mut config = Config::from_options("./config/testconfig", options, MyData::default());
         config.data.number = i32::MAX;
         config.save();
     }
@@ -60,7 +60,7 @@ fn run() {
                 boolean:  false
             }
         };
-        let config = Config::<MyData>::new("./config/testconfig", data);
+        let config = Config::new("./config/testconfig", data);
         let default = MyData::default();
         assert_eq!(config.data.number, i32::MAX);
         assert_eq!(config.data.subdata.string, default.subdata.string);
@@ -83,11 +83,13 @@ fn run() {
             log::error!("{e}");
         }
     }
+    println!("!!!!!!!! NORMAL TEST");
 }
 
 // TODO: Advanced test code should be refactored as it looks incredibly messy.
 //       Doesn't really matter due to the fact it's a test, though
 fn advanced_test() {
+    println!("!!!!!!!! ADVANCED_TEST");
     #[derive(Debug)]
     pub enum FormatFinder {
         GuessExtension(String),
@@ -156,7 +158,7 @@ fn advanced_test() {
 
         // Creating the config and saving it
         {
-            let mut config = Config::<MyData>::from_options(&path, options, MyData::default());
+            let mut config = Config::from_options(&path, options, MyData::default());
             config.data.number = i32::MAX;
             config.save();
         }
@@ -172,7 +174,7 @@ fn advanced_test() {
                     boolean:  false
                 }
             };
-            let config = Config::<MyData>::new(&path, data);
+            let config = Config::new(&path, data);
             let default = MyData::default();
             assert_eq!(config.data.number, i32::MAX);
             assert_eq!(config.data.subdata.string, default.subdata.string);

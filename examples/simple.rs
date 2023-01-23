@@ -17,7 +17,7 @@ fn main() {
     };
 
     // Creating a new config struct with our data struct (it can also guess the file extension)
-    let mut config = Config::<MyData>::new("./config/myconfig", data);
+    let mut config = Config::new("./config/myconfig", data);
 
     // Read/writing to the data
     println!("I am ${} in debt", config.data.student_debt);

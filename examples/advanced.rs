@@ -41,7 +41,7 @@ fn main() {
     };
 
     // Creating a new config struct with our data struct (it can also guess the file extension)
-    let mut config = Config::<MyData>::from_options(
+    let mut config = Config::from_options(
         "./config/compressed/myconfig",
         options,
         MyData::default()
