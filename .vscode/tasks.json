@@ -1,29 +1,25 @@
 {
 	"version": "2.0.0",
+	"problemMatcher": ["$rustc"],
+	"group": "test",
 	"tasks": [
 		{
 			"label": "rust: cargo test (JSON)",
-			"type": "cargo",
-			"command": "test",
 			"args": ["--features", "json5"],
-			"problemMatcher": ["$rustc"],
-			"group": "test"
+			"type": "cargo",
+			"command": "test"
 		},
 		{
 			"label": "rust: cargo test (TOML)",
-			"type": "cargo",
-			"command": "test",
 			"args": ["--features", "toml"],
-			"problemMatcher": ["$rustc"],
-			"group": "test"
+			"type": "cargo",
+			"command": "test"
 		},
 		{
 			"label": "rust: cargo test (YAML)",
-			"type": "cargo",
-			"command": "test",
 			"args": ["--features", "yaml"],
-			"problemMatcher": ["$rustc"],
-			"group": "test"
+			"type": "cargo",
+			"command": "test"
 		}
 	]
 }
