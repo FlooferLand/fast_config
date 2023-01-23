@@ -69,8 +69,10 @@ fn run() {
     }
 
     // Advanced test
-    if std::env::var("ADVANCED_TEST").is_ok() {
-        advanced_test();
+    if let Ok(value) = std::env::var("advanced_test") {
+        if !value.is_empty() {
+            advanced_test();
+        }
     }
 
     // Cleanup
