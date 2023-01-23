@@ -43,6 +43,20 @@ impl std::fmt::Display for ConfigFormat {
 }
 impl ConfigFormat {
     fn from_extension(ext: &str) -> Self {
+        if ext.len() <= 2 {
+            return ConfigFormat::None;
+        }
+
+        // Getting rid of the first . if it starts with one
+        let ext = {
+            if let Some(strip) = ext.strip_prefix('.') {
+                strip
+            } else {
+                ext
+            }
+        };
+        
+        // Matching
         match ext.to_lowercase().as_str() {
             "json" | "json5" => ConfigFormat::JSON5,
             "toml"           => ConfigFormat::TOML,
