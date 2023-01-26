@@ -31,7 +31,7 @@ impl Default for MyData {
 }
 
 fn main() {
-    // Initializing a logging system (needed to show errors)
+    // Initializing a logging system (needed to show some warnings/errors)
     env_logger::init();
 
     // Creating options

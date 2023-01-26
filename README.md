@@ -11,10 +11,10 @@
 [<img alt="issues" src="https://img.shields.io/github/issues/FlooferLand/fast_config?label=open%20issues&style=flat"/>](https://github.com/FlooferLand/fast_config/issues)
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/FlooferLand/fast_config/rust.yml)
 
-A small, lightweight, and easy-to-use Rust crate to handle config files.
+A small, safe, lightweight, and easy-to-use Rust crate to read and write to config files.
 
 Currently only supports: JSON5, TOML, and YAML.
-But more formats are planned to be added later.
+But more formats (such as RON) are planned to be added later.
 
 *[- click here to view code examples](#examples)*
 <br style="display: block; margin: 0 0; content: '---'" />
@@ -23,33 +23,27 @@ But more formats are planned to be added later.
 ---
 
 ## What is this crate?
-This crate was originally called `simple_config`, but I had to change
-the name due to a crate having the exact same name [*(linked here)*](https://crates.io/crates/simple_config).
-
-This crate was made to be a faster to set up, more light-weight, statically typed alternative to [config](https://crates.io/crates/config).
-But it also accidentally manages to beat [simple_config](https://crates.io/crates/simple_config) in the lightweightness and "fast to set up" category.
-
-The lead benefit of this crate is how fast you can get it set up;
-It also doesn't sacrifice performance for readability *(see some examples at [# Examples](#examples))*
+`fast_config` was made to be a faster to set up, more light-weight, statically typed alternative to [config](https://crates.io/crates/config).
+It also manages to have it's own benefits compared to some other config-reading crates,
+as there is full support for writing/saving config files
+and it also provides you with *some* options regarding styling your config files
 
 ---
 
 ### Why this crate?
-- It's small and fast *(uses compile-time features to remove any unnecessary code)*
+- It's small and fast *(uses compile-time features to remove/add code)*
 - It's safe and robust *(uses Rust's structs to store data, instead of HashMaps)*
-- Ridiculously simple to use *(only takes 3 lines of short code to make a config file, write/read something, and close it)*
+- Ridiculously simple to use *(only takes 3 lines of short code to make a config file, write/read something, and save it)*
 
 ### Why not this crate?
-- You can't currently use different file formats in the same project <br/>
-This is an intentional design choice to be able to
-shrink down the code as much as possible. <br/>
-And since this crate is mostly made for the global-scope config file a program might use,
-I didn't really see that as necessary. <br/>
-*Feel free to open an issue if you'd like this to be changed!*
+- It's not usable if you don't know the way the data will look like
 
 ### ⚠ Documentation and tests are still being made! ⚠
-I'm still working on this crate, and it's in somewhat-early-access.
-While I haven't managed to find any bugs, documentation might be a little weird or incomplete at the current moment.
+This crate has now entered the 'stable' stage, i however haven't battle-tested this in any big projects,
+so while there will NOT be any panics or crashes,
+some user-side error handling in particular might be a bit bugged
+
+Documentation might be a little weird or incomplete at the current moment, too.
 
 ---
 
@@ -65,7 +59,7 @@ pub struct MyData {
 }
 
 fn main() {
-    // Initializing a logging system (needed to show errors)
+    // Initializing a logging system (needed to show some warnings/errors)
     env_logger::init();
 
     // Creating our data (default values)
@@ -74,7 +68,7 @@ fn main() {
     };
 
     // Creating a new config struct with our data struct
-    let mut config = Config::<MyData>::new("./config/myconfig.json5", data);
+    let mut config = Config::new("./config/myconfig.json5", data).unwrap();
 
     // Read/writing to the data
     println!("I am ${} in debt", config.data.student_debt);
@@ -82,25 +76,30 @@ fn main() {
     println!("Oh no, i am now ${} in debt!!", config.data.student_debt);
 
     // Saving it back to the disk
-    config.save();
+    config.save().unwrap();
 }
 ```
 
 ## Getting started
 
-1. Add the crate to your project <br/> `cargo add fast_config`
-
+1. Add the crate to your project via <br/> `cargo add fast_config`
 ---
 
-2. Enable a feature for the format you'd like to use <br/>
+3. Enable the feature(s) for the format(s) you'd like to use <br/>
    - Currently only `json5`, `toml`, and `yaml` are supported <br/>
-   - Please note that currently only *one* feature can be enabled at the same time
 ---
-3. Create a struct for your data that derives `serde::Serialize` and `serde::Deserialize`
+4. Create a struct to hold your data that derives `serde::Serialize` and `serde::Deserialize`
 ---
-4. Use <br/>
-   `let my_config = Config::<MyData>::new("..");` <br/>
+5. Create an instance of your data struct
+- Optionally `use` the crate's `Config` type for convenience <br/>
+  `use fast_config::Config;`
+---
+6. Use <br/>
+   ```rust,ignore
+   let my_config = Config::new("..", your_data).unwrap();
+   ```
    to create and store your config file(s)!
+Alternatively you could also use `Config::from_settings` to style some things!
 
 ---
 
