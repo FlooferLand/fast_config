@@ -1,4 +1,4 @@
-use fast_config::{Config, ConfigOptions};
+use fast_config::{Config, ConfigError, ConfigOptions, DataParseError};
 use serde::{Serialize, Deserialize};
 
 // Sub-structs
@@ -41,11 +41,32 @@ fn main() {
     };
 
     // Creating a new config struct with our data struct (it can also guess the file extension)
-    let mut config = Config::from_options(
+    let result = Config::from_options(
         "./config/compressed/myconfig",
         options,
         MyData::default()
     );
+
+    // Error matching
+    let mut config = match result {
+        Ok(cfg) => {
+            cfg
+        }
+        Err(error) => {
+            match error {
+                // Failed parsing the config
+                ConfigError::DataParseError(parse_err) => {
+                    match parse_err {
+                        DataParseError::Serialize(format) =>
+                            panic!("Failed to serialize format {format}!"),
+                        DataParseError::Deserialize(format, _string) =>
+                            panic!("Failed to deserialize format {format}!")
+                    }
+                }
+                _ => panic!("Other error!")
+            }
+        }
+    };
 
     // Read/writing to the data
     println!("I am ${} in debt", config.data.student_debt);
@@ -53,5 +74,5 @@ fn main() {
     println!("Oh no, i am now ${} in debt!!", config.data.student_debt);
 
     // Saving it back to the disk
-    config.save();
+    config.save().unwrap();
 }
