@@ -29,7 +29,7 @@ pub fn get_first_enabled_feature() -> ConfigFormat {
     }
 }
 
-// Creates a new string from an existing data object
+// Creates a new string from an existing data object (Serialization)
 pub fn to_string<D>(value: &D, options: &ConfigOptions) -> GenericResult<String> where D: Serialize {
     match options.format {
         #[cfg(feature = "json5")]
@@ -67,7 +67,7 @@ pub fn to_string<D>(value: &D, options: &ConfigOptions) -> GenericResult<String>
 }
 
 
-// Creates a new data object from a string
+// Creates a new data object from a string (Deserialization)
 pub fn from_string<'a, D>(value: &'a String, format: &ConfigFormat) -> GenericResult<D> where D: Deserialize<'a> {
     let value = value.as_str();
     match format {

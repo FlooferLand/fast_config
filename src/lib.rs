@@ -6,6 +6,7 @@ mod extensions;
 mod format_dependant;
 mod utils;
 
+use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io::{Read, Write};
@@ -42,22 +43,17 @@ pub enum ConfigFormat {
     None
 }
 impl ConfigFormat {
-    fn from_extension(ext: &str) -> Self {
+    fn from_extension(ext: &OsStr) -> Self {
         if ext.len() <= 2 {
             return ConfigFormat::None;
         }
 
-        // Getting rid of the first . if it starts with one
-        let ext = {
-            if let Some(strip) = ext.strip_prefix('.') {
-                strip
-            } else {
-                ext
-            }
-        };
-        
+        let ext = ext.to_ascii_lowercase()
+            .to_string_lossy()
+            .replace('\u{FFFD}', "");
+                
         // Matching
-        match ext.to_lowercase().as_str() {
+        match ext.as_str() {
             "json" | "json5" => ConfigFormat::JSON5,
             "toml"           => ConfigFormat::TOML,
             "yaml" | "yml"   => ConfigFormat::YAML,
@@ -69,7 +65,7 @@ impl Display for ConfigFormat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let string = match self {
             ConfigFormat::None => {
-                log::error!("Format \"None\" cannot be displayed using Display!");
+                log::error!("Format \"None\" should not be displayed using Display!");
                 String::new()
             }
             _ => {
@@ -123,7 +119,7 @@ impl Display for ConfigFormat {
 ///     };
 ///
 ///     // Creating the config itself
-///     let mut config = Config::<MyData>::from_options("./config/myconfig", options, data);
+///     let mut config = Config::from_options("./config/myconfig", options, data).unwrap();
 ///     // [.. do stuff here]
 /// }
 /// ```
@@ -226,17 +222,16 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         let mut path = PathBuf::from(path.as_ref());
 
         // Guessing the file format
-        if options.format == ConfigFormat::None && path.extension().is_some() {
-            // - Based on the extension
-            let ext = path.extension().unwrap();
-            let Some(ext) = ext.to_str() else {
-                return Err(ConfigError::InvalidEncoding(Box::new(ext.to_owned())));
-            };
-            options.format = ConfigFormat::from_extension(ext);
-        } else {
-            // - Based on the enabled features
-            options.format = format_dependant::get_first_enabled_feature();
-        }
+        options.format = match (options.format, path.extension()) {
+            (ConfigFormat::None, Some(ext)) => {
+                // - Based on the extension
+                ConfigFormat::from_extension(ext)
+            },
+            _ => {
+                // - Based on the enabled features
+                format_dependant::get_first_enabled_feature()
+            }
+        };
 
         // Setting the file format
         if path.extension().is_none() {
@@ -247,24 +242,25 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         if let Ok(mut file) = fs::File::open(&path) {
             // Reading from the file if a file was found
             let mut content = String::new();
-            if file.read_to_string(&mut content).is_err() {
-                return Err(ConfigError::InvalidFileEncoding(path));
+            if let Err(err) = file.read_to_string(&mut content) {
+                return Err(ConfigError::InvalidFileEncoding(err, path));
             };
 
             // Deserialization
+            // (Getting data from a string)
             if let Ok(value) = format_dependant::from_string(&content, &options.format) {
                 data = value;
             } else {
                 return Err(ConfigError::DataParseError(
-                    DataParseError::Deserialize(options.format, options.format.to_string())
+                    DataParseError::Deserialize(options.format, content)
                 ));
             };
         } else {
             // Creating the directories leading up to the config file
             match path.parent() {
                 Some(dirs) => {
-                    if fs::create_dir_all(dirs).is_err() {
-                        return Err(ConfigError::IoError(IoError::ParentDirectoryCreation));
+                    if let Err(err) = fs::create_dir_all(dirs) {
+                        return Err(ConfigError::IoError(err));
                     }
                 },
                 None => {}
@@ -272,7 +268,9 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
 
             // Creating the config file itself
             // (should never fail due to the code above)
-            let _ = fs::File::create(&path);
+            if let Err(err) = fs::File::create(&path) {
+                return Err(ConfigError::IoError(err));
+            }
         }
 
         // Creating the Config object
@@ -300,31 +298,35 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     pub fn save(&self) -> Result<(), ConfigSaveError> {
         let to_string = format_dependant::to_string(&self.data, &self.options);
         match to_string {
+            // If the conversion was successful
             Ok(data) => {
                 match fs::File::create(&self.path) {
+                    // File created successfully
                     Ok(mut file) => {
                         // Writing data to the writer
                         if let Err(err) = write!(file, "{data}") {
-                            Err(ConfigSaveError::IoError(err))?
+                            return Err(ConfigSaveError::IoError(err));
                         }
                     },
+                    // File could not be created
                     Err(_) => {
-                        // If the file could not be saved, try fixing it
-                        // by creating any missing parent directories
+                        // Try fixing it by creating any missing parent directories
                         if let Some(parent_dir) = self.path.parent() {
                             let _ = fs::create_dir_all(parent_dir);
                         }
 
-                        // Create the file
+                        // Attempt to create the file again before throwing an error
                         if let Err(err) = fs::File::create(&self.path) {
-                            Err(ConfigSaveError::IoError(err))?
+                            return Err(ConfigSaveError::IoError(err));
                         }
                     }
                 };
             },
+            // If the conversion failed
             Err(e) => {
-                Err(ConfigSaveError::SerializationError(e))?
-                // error!("{e}\n\t^ This error sometimes seems to mean a data type you're using in your custom data struct isn't supported!");
+                // This error triggering sometimes seems to mean a
+                // data type you're using in your custom data struct isn't supported
+                return Err(ConfigSaveError::SerializationError(e));
             }
         };
         Ok(())
