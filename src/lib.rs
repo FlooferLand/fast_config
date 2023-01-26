@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 
 // ---------------------------------------------------------------------------------------------
 // TODO: Finish rewriting the documentation for methods / structs
-// TODO: Add panic notifiers in the documentation
+// TODO: Add panic notifiers in the documentation (if any)
 // TODO: Add in an option to automatically save the config when the Config object is dropped
 // ---------------------------------------------------------------------------------------------
 
@@ -32,9 +32,10 @@ pub use error::*;
 pub use error_messages::*;
 
 
-/// The object you use to configure the file format
+/// The object you use to configure
+/// which file format to use
 /// 
-/// You use it in [`ConfigOptions`]
+/// You use it in [`ConfigOptions`]!
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ConfigFormat {
     JSON5,
@@ -43,7 +44,8 @@ pub enum ConfigFormat {
     None
 }
 impl ConfigFormat {
-    fn from_extension(ext: &OsStr) -> Self {
+    /// Takes in an OsString and returns a ConfigFormat
+    pub fn from_extension(ext: &OsStr) -> Self {
         if ext.len() <= 2 {
             return ConfigFormat::None;
         }
@@ -65,7 +67,7 @@ impl Display for ConfigFormat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let string = match self {
             ConfigFormat::None => {
-                log::error!("Format \"None\" should not be displayed using Display!");
+                log::error!("Format \"None\" should never be shown using Display! (unsafe)");
                 String::new()
             }
             _ => {
