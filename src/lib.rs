@@ -12,14 +12,11 @@ use std::io::{Read, Write};
 use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
 
-// CHECKED?: Make all file formats usable in the same project by making a FileFormat enum
-//       and disabling the struct entries based on the enabled features
-// ^------- Needs to be further tested!
-
+// ---------------------------------------------------------------------------------------------
 // TODO: Finish rewriting the documentation for methods / structs
 // TODO: Add panic notifiers in the documentation
-
 // TODO: Add in an option to automatically save the config when the Config object is dropped
+// ---------------------------------------------------------------------------------------------
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
 compile_error!("You must install at least one format feature: `json5`, `toml`, or `yaml`");
