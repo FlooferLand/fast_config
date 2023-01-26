@@ -1,10 +1,12 @@
 #![doc = include_str!("../README.md")]
 
 mod error;
+mod error_messages;
 mod extensions;
 mod format_dependant;
 mod utils;
 
+use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io::{Read, Write};
 use serde::{Serialize, Deserialize};
@@ -29,6 +31,7 @@ mod tests;
 
 // Separated things
 pub use error::*;
+pub use error_messages::*;
 
 
 /// The object you use to configure the file format
@@ -65,17 +68,18 @@ impl ConfigFormat {
         }
     }
 }
-impl ToString for ConfigFormat {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for ConfigFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let string = match self {
             ConfigFormat::None => {
-                log::error!("Invalid format!");
+                log::error!("Format \"None\" cannot be displayed using Display!");
                 String::new()
             }
             _ => {
                 format!("{self:?}").to_lowercase()
             }
-        }
+        };
+        write!(f, "{string}")
     }
 }
 
@@ -198,7 +202,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// More info is provided at [`Config`].
     ///
     /// If you'd like to configure this object, you should take a look at using [`Config::from_options`] instead.
-    pub fn new(path: impl AsRef<Path>, data: D) -> Self {
+    pub fn new(path: impl AsRef<Path>, data: D) -> Result<Config<D>, ConfigError> {
         Self::construct(path, ConfigOptions::default(), data)
     }
 
@@ -216,19 +220,21 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
     /// You have to make this struct yourself, construct it, and pass it in.
     /// More info is provided at [`Config`].
-    pub fn from_options(path: impl AsRef<Path>, options: ConfigOptions, data: D) -> Self {
+    pub fn from_options(path: impl AsRef<Path>, options: ConfigOptions, data: D) -> Result<Config<D>, ConfigError> {
         Self::construct(path, options, data)
     }
 
     // Main, private constructor
-    fn construct(path: impl AsRef<Path>, mut options: ConfigOptions, mut data: D) -> Self {
+    fn construct(path: impl AsRef<Path>, mut options: ConfigOptions, mut data: D) -> Result<Config<D>, ConfigError> {
         let mut path = PathBuf::from(path.as_ref());
 
         // Guessing the file format
         if options.format == ConfigFormat::None && path.extension().is_some() {
             // - Based on the extension
             let ext = path.extension().unwrap();
-            let ext = ext.to_str().expect("Expected a valid UTF-8 extension");
+            let Some(ext) = ext.to_str() else {
+                return Err(ConfigError::InvalidEncoding(Box::new(ext.to_owned())));
+            };
             options.format = ConfigFormat::from_extension(ext);
         } else {
             // - Based on the enabled features
@@ -241,41 +247,43 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         }
 
         // Making sure there's a config file
-        if !path.exists() {
+        if let Ok(mut file) = fs::File::open(&path) {
+            // Reading from the file if a file was found
+            let mut content = String::new();
+            if file.read_to_string(&mut content).is_err() {
+                return Err(ConfigError::InvalidFileEncoding(path));
+            };
+
+            // Deserialization
+            if let Ok(value) = format_dependant::from_string(&content, &options.format) {
+                data = value;
+            } else {
+                return Err(ConfigError::DataParseError(
+                    DataParseError::Deserialize(options.format, options.format.to_string())
+                ));
+            };
+        } else {
             // Creating the directories leading up to the config file
             match path.parent() {
                 Some(dirs) => {
-                    fs::create_dir_all(dirs)
-                        .expect("Could not create the directories leading up to the config file!")
+                    if fs::create_dir_all(dirs).is_err() {
+                        return Err(ConfigError::IoError(IoError::ParentDirectoryCreation));
+                    }
                 },
                 None => {}
             }
 
             // Creating the config file itself
-            fs::File::create(&path).expect("Could not create the config file!");
-        } else {
-            // Reading from the file if a file was found
-            let mut content = String::new();
-            let mut file = fs::File::open(&path).expect("Could not open the config file!");
-            file.read_to_string(&mut content).expect("File content isn't valid UTF-8!");
-            data = format_dependant::from_string(&content, &options.format).expect(
-                format!(
-                    "Config file isn't valid according to it's format! ({})\
-                    You might want to:\
-                    1. Check that the format feature you're trying to use is enabled in your `cargo.toml` (JSON, TOML, YAML, etc)\
-                    2. Check that your data is valid (some types like vectors and custom types cannot be converted to Serde by default, you might want to implement Deserialize and Serialize for them manually)\
-                    3. Report this bug to the project's \"Issues\" page if nothing seems to be solving the issue (https://github.com/FlooferLand/fast_config/issues)",
-                    options.format.to_string()
-                ).as_str()
-            );
+            // (should never fail due to the code above)
+            let _ = fs::File::create(&path);
         }
 
         // Creating the Config object
-        Self {
+        Ok(Self {
             data,
             path,
             options
-        }
+        })
     }
 
     /// Saves the config file to the disk.
@@ -292,27 +300,36 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// and it might've ended up in some users getting confused, as well as a tiny bit of performance overhead.
     ///
     /// If you'd like this feature to be back feel free to open an issue and I'll add it back right away!
-    pub fn save(&self) {
+    pub fn save(&self) -> Result<(), ConfigSaveError> {
         let to_string = format_dependant::to_string(&self.data, &self.options);
         match to_string {
             Ok(data) => {
-                let mut file = match fs::File::create(&self.path) {
-                    Ok(file) => file,
+                match fs::File::create(&self.path) {
+                    Ok(mut file) => {
+                        // Writing data to the writer
+                        if let Err(err) = write!(file, "{data}") {
+                            Err(ConfigSaveError::IoError(err))?
+                        }
+                    },
                     Err(_) => {
-                        // If the file could not be saved
+                        // If the file could not be saved, try fixing it
+                        // by creating any missing parent directories
                         if let Some(parent_dir) = self.path.parent() {
                             let _ = fs::create_dir_all(parent_dir);
                         }
-                        fs::File::create(&self.path)
-                            .expect("Could not open the config file while saving!\n- Does the path to the file still exist?")
+
+                        // Create the file
+                        if let Err(err) = fs::File::create(&self.path) {
+                            Err(ConfigSaveError::IoError(err))?
+                        }
                     }
                 };
-                write!(file, "{data}").expect("Could not save the config file!");
             },
             Err(e) => {
-                log::error!("{e}");
+                Err(ConfigSaveError::SerializationError(e))?
                 // error!("{e}\n\t^ This error sometimes seems to mean a data type you're using in your custom data struct isn't supported!");
             }
         };
+        Ok(())
     }
 }
