@@ -22,17 +22,20 @@ pub enum DataParseError {
 /// Represents an error related to the file format not being able to be found or guessed
 #[derive(Debug)]
 pub struct UnknownFormatError {
+	/// The error message itself
+	pub message: Option<String>,
+
+	/// The [`ConfigFormat`]s found in your environment.
 	pub found_formats: Vec<ConfigFormat>
 }
 impl UnknownFormatError {
-	pub fn new(found_formats: Vec<ConfigFormat>) -> Self {
-		Self { found_formats }
+	pub fn new(message: Option<String>, found_formats: Vec<ConfigFormat>) -> Self {
+		Self { message, found_formats }
 	}
 }
 
-/// The main result error type of the crate
-/// 
-/// [`ConfigError::Fatal`] - Returned when your program has little chances of being recovered (ex: I/O errors) 
+/// The main result error type of the crate. <br/>
+/// Each type has it's own documentation.
 #[derive(Error, Debug)]
 pub enum ConfigError {
 	/// Occurs when a file isn't composed of valid UTF-8 characters.
@@ -41,15 +44,29 @@ pub enum ConfigError {
     InvalidFileEncoding(std::io::Error, PathBuf),
 
 	/// Occurs when the file could not be saved due to filesystem-related errors. <br/>
-	/// Usually when one of the parent directories for the config file could not be created/located.
+	/// Usually when one of the parent directories for the config file could not
+	/// be located or automatically created.
 	/// - Stores the [`std::io::Error`] in question
 	#[error(transparent)]
 	IoError(std::io::Error),
 
 	/// Occurs when Serde fails to serialize/deserialize your data
+	/// - Stores an enum containing the section of data parsing failed for
+	///   (serialization/deserialization) <br/>
 	#[error(transparent)]
 	DataParseError(DataParseError),
 
+	/// Occurs when `fast_config` cannot guess what format your data should be.
+	/// - Stores some data related to the error
+	///
+	/// # This error can be avoided by either:
+	/// 1. Adding a file extension at the end of the path name
+	///    (`json`/`json5`, `toml`, `yaml`/`yml`) <br/>
+	///    *(It would be appreciated if you create an issue on the project's Github if
+	///      you notice an extension type is missing)*
+	/// 2. Passing a `ConfigSetupOptions` struct into `Config::from_options`, and defining
+	///    the format there.
+	/// 3. Or only having one enabled `format` feature in your `cargo.toml`
 	#[error(transparent)]
 	UnknownFormat(UnknownFormatError)
 }
@@ -61,6 +78,8 @@ pub enum ConfigSaveError {
 	#[error(transparent)]
 	IoError(std::io::Error),
 
+	/// Occurs when the save data could not be serialized. <br/>
+	/// - Stores an error in string form explaining why serialization failed.
 	#[error("{}", .0)]
 	SerializationError(String)
 }

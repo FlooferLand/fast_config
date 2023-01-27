@@ -22,6 +22,7 @@ pub fn get_first_enabled_feature() -> ConfigFormat {
         panic!("No file formats installed or selected. You must enable at least one format feature");
     } else {
         // If there are multiple features
+        // TODO/FIXME: Unpredictable code, should return an Option or a Result!
         let first = features[0];
         log::warn!("Too many format features enabled, with no format specified in the extension or the config's settings.");
         log::warn!("Defaulting to picking the first available format.. ({:?})", &first);

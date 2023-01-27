@@ -21,7 +21,7 @@ impl std::fmt::Display for DataParseError {
 						"Your config's data types must all implement serde::Serialize and Deserialize!"
 					}
 					#[cfg(not(debug_assertions))] {
-						"This is likely to be an issue caused by the Serialize implementation of the program you are using."
+						"This is likely an issue caused by the `Serialize` implementation of the program you are using."
 					}
 				};
 				write!(f, "Serialization: An error occurred trying to convert the config to a string.\n
@@ -54,12 +54,20 @@ impl std::fmt::Display for DataParseError {
 impl std::error::Error for UnknownFormatError {}
 impl std::fmt::Display for UnknownFormatError {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		let error_message;
+		if let Some(message) = &self.message {
+			error_message = format!("Error: {message}");
+		} else {
+			error_message = String::new();
+		}
+
 		write!(f, "The format had to be guessed from {} other features.\
+				    {error_message}
 				  \nYou should consider:\
 				  \n- Adding a file extension at the end of your config file's path\
 				  \n- Passing a `ConfigSetupOptions` struct into `Config::from_options`\
 				  \n- Enabling only one format in the fast_config features",
-			   self.found_formats.len()
+			self.found_formats.len()
 		)
 	}
 }

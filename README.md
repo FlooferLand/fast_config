@@ -24,8 +24,8 @@ But more formats (such as RON) are planned to be added later.
 
 ## What is this crate?
 `fast_config` was made to be a faster to set up, more light-weight, statically typed alternative to [config](https://crates.io/crates/config).
-It also manages to have it's own benefits compared to some other config-reading crates,
-as there is full support for writing/saving config files
+It also manages to have its own benefits compared to some other config-reading crates
+as there is full support for writing/saving config files,
 and it also provides you with *some* options regarding styling your config files
 
 ---
@@ -96,10 +96,10 @@ fn main() {
 ---
 6. Use <br/>
    ```rust,ignore
-   let my_config = Config::new("..", your_data).unwrap();
+   let my_config = Config::new("./path/to/my_config_file", your_data).unwrap();
    ```
    to create and store your config file(s)!
-Alternatively you could also use `Config::from_settings` to style some things!
+Alternatively you could also use `Config::from_settings` to style some things and manually set the format!
 
 ---
 

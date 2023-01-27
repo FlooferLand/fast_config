@@ -145,6 +145,7 @@ fn advanced_test() {
 
     // Automated case-based tests
     println!("######## Case test started! ########");
+    println!("| All errors will now be split into sections |");
     for case in cases {
         let mut path = String::from("./config/advtestconfig");
         let mut format = None;
@@ -188,7 +189,7 @@ fn advanced_test() {
                     boolean:  false
                 }
             };
-            let config = Config::new(&path, data).unwrap();
+            let config = Config::from_options(&path, options, data).unwrap();
             let default = MyData::default();
             assert_eq!(config.data.number, i32::MAX);
             assert_eq!(config.data.subdata.string, default.subdata.string);

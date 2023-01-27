@@ -16,8 +16,8 @@ fn main() {
         student_debt: 20
     };
 
-    // Creating a new config struct with our data struct (it can also guess the file extension)
-    let mut config = Config::new("./config/myconfig", data).unwrap();
+    // Creating a new config struct with our data struct
+    let mut config = Config::new("./config/myconfig.json5", data).unwrap();
 
     // Read/writing to the data
     println!("I am ${} in debt", config.data.student_debt);

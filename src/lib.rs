@@ -14,10 +14,11 @@ use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
 
 // This release ----------------------------------------------------------------------------------
-// TODO: Test the entire project and rewrite any unsafe code (ready up for release)
+// .. Nothing to do!
 // Next release ---------------------------------------------------------------------------------
 // TODO: Add in an option to automatically save the config when the Config object is dropped
 // TODO: Add in a "from_string" method and an "empty" constructor
+// TODO: Add in an option
 // ----------------------------------------------------------------------------------------------
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
@@ -163,22 +164,27 @@ pub struct InternalOptions {
     pub pretty: bool,
     pub format: ConfigFormat
 }
-impl From<ConfigSetupOptions> for InternalOptions {
-    /// # PANICS!
-    /// This method currently panics in a controlled manner.
-    /// A panic is triggered when the `format` option is [`Option::None`].
+impl TryFrom<ConfigSetupOptions> for InternalOptions {
+    /// This function converts a [`ConfigSetupOptions`] into an internally-used [`InternalOptions`].
     ///
-    /// This function should not be used outside the `fast_config` source code
-    /// unless you know what you're doing. <br/>
-    /// This function's signature may be modified to return an [`Option`] in the future.
-    fn from(options: ConfigSetupOptions) -> Self {
-        #[cfg(all(debug_assertions, test))] {
-            log::warn!("`InternalOptions::from(ConfigSetupOptions)` got called! Use with caution!")
-        }
-        Self {
+    /// This function is not recommended to be used outside the `fast_config` source code
+    /// unless you know what you're doing and accept the risks. <br/>
+    /// The signature or behaviour of the function may be modified in the future.
+    type Error = String;
+    fn try_from(options: ConfigSetupOptions) -> Result<Self, Self::Error> {
+        // Getting the formatting language.
+        let format = match options.format {
+            Some(format) => format,
+            None => {
+                Err("The file format could not be guessed! It appears to be None!")?
+            }
+        };
+
+        // Constructing a converted type
+        Ok(Self {
             pretty: options.pretty,
-            format: options.format.expect("The file format could not be guessed! It appears to be None")
-        }
+            format,
+        })
     }
 }
 
@@ -274,7 +280,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         let first_enabled_feature = format_dependant::get_first_enabled_feature();
         let guess_from_feature = || {
             if enabled_features.len() > 1 {
-                Err(ConfigError::UnknownFormat(UnknownFormatError::new(enabled_features)))
+                Err(ConfigError::UnknownFormat(UnknownFormatError::new(None, enabled_features.clone())))
             } else {
                 Ok(Some(first_enabled_feature))
             }
@@ -298,7 +304,16 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
                 }
             };
         }
-        let options = InternalOptions::from(options);
+
+        // Converting the user options into a more convenient internally-used type
+        let options: InternalOptions = match InternalOptions::try_from(options) {
+            Ok(value) => value,
+            Err(message) => {
+                return Err(ConfigError::UnknownFormat(
+                    UnknownFormatError::new(Some(message), enabled_features)
+                ));
+            }
+        };
 
         // Setting the file format
         if path.extension().is_none() {
