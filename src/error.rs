@@ -19,6 +19,16 @@ pub enum DataParseError {
 	Deserialize(ConfigFormat, String)
 }
 
+/// Represents an error related to the file format not being able to be found or guessed
+#[derive(Debug)]
+pub struct UnknownFormatError {
+	pub found_formats: Vec<ConfigFormat>
+}
+impl UnknownFormatError {
+	pub fn new(found_formats: Vec<ConfigFormat>) -> Self {
+		Self { found_formats }
+	}
+}
 
 /// The main result error type of the crate
 /// 
@@ -38,7 +48,10 @@ pub enum ConfigError {
 
 	/// Occurs when Serde fails to serialize/deserialize your data
 	#[error(transparent)]
-	DataParseError(DataParseError)
+	DataParseError(DataParseError),
+
+	#[error(transparent)]
+	UnknownFormat(UnknownFormatError)
 }
 
 #[derive(Error, Debug)]

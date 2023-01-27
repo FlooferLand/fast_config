@@ -14,10 +14,10 @@ use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
 
 // This release ----------------------------------------------------------------------------------
-// TODO: Finish rewriting the documentation for the entire crate
 // TODO: Test the entire project and rewrite any unsafe code (ready up for release)
 // Next release ---------------------------------------------------------------------------------
 // TODO: Add in an option to automatically save the config when the Config object is dropped
+// TODO: Add in a "from_string" method and an "empty" constructor
 // ----------------------------------------------------------------------------------------------
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
@@ -33,18 +33,30 @@ pub use error::*;
 pub use error_messages::*;
 
 
-/// The object you use to configure
-/// which file format to use
-/// 
-/// You use it in [`ConfigSetupOptions`]!
-#[derive(Debug, PartialEq, Copy, Clone, Hash)]
+/// Enum used to configure the [`Config`]s file format.
+///
+/// You can use it in a [`ConfigSetupOptions`], inside [`Config::from_options`]
+///
+/// ## /!\ Make sure to enable the feature flag for a format before using it! /!\
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ConfigFormat {
-    #[cfg(feature = "json5")] JSON5,
-    #[cfg(feature = "toml")]  TOML,
-    #[cfg(feature = "yaml")]  YAML
+    JSON5,
+    TOML,
+    YAML
 }
 impl ConfigFormat {
-    /// Takes in an OsString and returns a ConfigFormat
+    /// Mainly used to convert file extensions into [`ConfigFormat`]s <br/>
+    /// Returns [`Option::None`] if the string/extension doesn't match any known format.
+    ///
+    /// # Example:
+    /// ```
+    /// # use std::ffi::OsStr;
+    /// # use fast_config::ConfigFormat;
+    /// assert_eq!(
+    ///     ConfigFormat::from_extension(OsStr::new("json5")).unwrap(),
+    ///     ConfigFormat::JSON5
+    /// );
+    /// ```
     pub fn from_extension(ext: &OsStr) -> Option<Self> {
         let ext = ext.to_ascii_lowercase()
             .to_string_lossy()
@@ -52,9 +64,9 @@ impl ConfigFormat {
                 
         // Matching
         match ext.as_str() {
-            "json" | "json5" => Some(ConfigFormat::JSON5),
+            "json5" | "json" => Some(ConfigFormat::JSON5),
             "toml"           => Some(ConfigFormat::TOML),
-            "yaml" | "yml"   => Some(ConfigFormat::YAML),
+            "yaml"  | "yml"  => Some(ConfigFormat::YAML),
             _ => None
         }
     }
@@ -79,22 +91,23 @@ impl Default for ConfigFormat {
 /// Used to configure the [`Config`] object
 ///
 /// # Attributes
-/// - `pretty` - Makes the contents of the config file more readable.
-/// When false, it will try to compact down the config file data so it takes up less storage space.
-/// *I recommend you keep it on* as most modern systems have enough space to handle
-/// spaces and newline characters, even at scale.
+/// - `pretty` - Makes the contents of the config file more humanly-readable.
+/// When `false`, it will try to compact down the config file data so it takes up less storage space.
+/// I recommend you keep it on unless you know what you're doing as most modern systems have enough
+/// space to handle spaces and newline characters even at scale.
 ///
-/// - `format` - An enum to specify the format language to use *(ex: JSON, TOML, etc.)* <br/>
-/// Takes in an enum of type [`ConfigFormat`] <br/>
-/// If you don't select a format *(Default)* it will try to guess the format
-/// based on the file extension and/or enabled features.
+/// - `format` - An [`Option`] containing an enum of type [`ConfigFormat`].
+/// Used to specify the format language to use *(ex: JSON, TOML, etc.)* <br/>
+/// If you don't select a format *(Option::None)* it will try to guess the format
+/// based on the file extension and enabled features. <br/>
+/// If this step fails, an [`UnknownFormatError`] will be returned.
 ///
 /// # More options are to be added later!
 /// Pass `..` [`Default::default()`] at the end of your construction
 /// to prevent yourself from getting errors in the future!
 ///
 /// # Examples:
-/// ```no_run
+/// ```
 /// use fast_config::{ConfigSetupOptions, ConfigFormat, Config};
 /// use serde::{Serialize, Deserialize};
 ///
@@ -120,9 +133,17 @@ impl Default for ConfigFormat {
 ///     // Creating the config itself
 ///     let mut config = Config::from_options("./config/myconfig", options, data).unwrap();
 ///     // [.. do stuff here]
+///     # // Cleanup
+///     # match std::fs::remove_dir_all("./config/") {
+///     #     Err(e) => {
+///     #        log::error!("{e}");
+///     #     },
+///     #     Ok(_) => {}
+///     # }
 /// }
 /// ```
 ///
+#[derive(Clone, Copy)]
 pub struct ConfigSetupOptions {
     pub pretty: bool,
     pub format: Option<ConfigFormat>
@@ -137,16 +158,23 @@ impl Default for ConfigSetupOptions {
 }
 
 /// The internally-stored settings type for [`Config`] <br/>
-/// Works and looks like [`ConfigSetupOptions`], with a few key differences.
+/// Works and looks like [`ConfigSetupOptions`], with a few internally-required key differences.
 pub struct InternalOptions {
     pub pretty: bool,
     pub format: ConfigFormat
 }
 impl From<ConfigSetupOptions> for InternalOptions {
     /// # PANICS!
-    /// This method panics in a controlled manner. <br/>
-    /// Should not be used outside `fast_config`!
+    /// This method currently panics in a controlled manner.
+    /// A panic is triggered when the `format` option is [`Option::None`].
+    ///
+    /// This function should not be used outside the `fast_config` source code
+    /// unless you know what you're doing. <br/>
+    /// This function's signature may be modified to return an [`Option`] in the future.
     fn from(options: ConfigSetupOptions) -> Self {
+        #[cfg(all(debug_assertions, test))] {
+            log::warn!("`InternalOptions::from(ConfigSetupOptions)` got called! Use with caution!")
+        }
         Self {
             pretty: options.pretty,
             format: options.format.expect("The file format could not be guessed! It appears to be None")
@@ -158,20 +186,20 @@ impl From<ConfigSetupOptions> for InternalOptions {
 /// The main class you use to create/access your configuration files!
 ///
 /// # Construction
-/// See [`Config::new`] and [`Config::from_options`] if you wish to construct a new Config!
+/// See [`Config::new`] and [`Config::from_options`] if you wish to construct a new `Config`!
 ///
 /// # Data
-/// This class stores data using a struct you define yourself.
+/// This class stores data within a data struct you define yourself.
 /// This allows for the most amount of performance and safety,
 /// while also allowing you to add additional features by adding `impl` blocks on your struct.
 ///
 /// [`Serialize`]: serde::Serialize
 /// [`Deserialize`]: serde::Deserialize
 ///
-/// Your struct needs to implement [`serde::Serialize`] and [`serde::Deserialize`].
+/// Your data struct needs to implement [`serde::Serialize`] and [`serde::Deserialize`].
 /// In most cases you can just use `#[derive(Serialize, Deserialize)]` to derive them.
 ///
-///
+/// # Examples
 /// Here is a code example on how you could define the data to pass into the constructors on this class:
 /// ```
 /// use serde::{Serialize, Deserialize};
@@ -202,14 +230,15 @@ pub struct Config<D> where for<'a> D: Deserialize<'a> + Serialize {
 impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// Constructs and returns a new config object using the default options.
     ///
+    /// If there is a file at `path`, the file will be opened. <br/>
     /// If there's not a file at `path`, the file will automatically be generated.
     ///
     /// - `path`: Takes in a path to where the config file is or should be located.
-    /// If the file has no extension, the extension will be guessed using the enabled feature
+    /// If the file has no extension, the crate will attempt to guess the extension from one available format `feature`.
     ///
     /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
     /// You have to make this struct yourself, construct it, and pass it in.
-    /// More info is provided at [`Config`].
+    /// More info about it is provided at [`Config`].
     ///
     /// If you'd like to configure this object, you should take a look at using [`Config::from_options`] instead.
     pub fn new(path: impl AsRef<Path>, data: D) -> Result<Config<D>, ConfigError> {
@@ -220,12 +249,14 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     ///
     /// If there's not a file at `path`, the file will automatically be generated.
     ///
-    /// - `path`: Takes in a path to where the config file is or should be located.
-    /// If the file has no extension, the extension will be guessed based on the enabled feature
-    /// (or the selected format in your `options`)
-    ///
+    /// - `path`: Takes in a path to where the config file is or should be located. <br/>
+    /// If the file has no extension, and there is no `format` selected in your `options`,
+    /// the crate will attempt to guess the extension from one available format `feature`s.
+    //
     /// - `options`: Takes in a [`ConfigSetupOptions`],
-    /// used to configure the format language, styling of the data, and other things.
+    /// used to configure the format language, styling of the data, and other things. <br/>
+    /// Remember to add `..` [`default::Default()`] at the end of your `options` as more options are
+    /// going to be added to the crate later on.
     ///
     /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
     /// You have to make this struct yourself, construct it, and pass it in.
@@ -239,33 +270,31 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         let mut path = PathBuf::from(path.as_ref());
 
         // Setting up variables
-        let features_count = format_dependant::get_enabled_features().len();
+        let enabled_features = format_dependant::get_enabled_features();
         let first_enabled_feature = format_dependant::get_first_enabled_feature();
         let guess_from_feature = || {
-            if features_count > 1 {
-                log::error!("The format had to be guessed from {features_count} other features.\
-                              \nYou should consider:\
-                              \n- Adding a file extension at the end of your config file's path\
-                              \n- Passing a `ConfigSetupOptions` struct into `Config::from_options`\
-                              \n- Enabling only one format in the fast_config features")
+            if enabled_features.len() > 1 {
+                Err(ConfigError::UnknownFormat(UnknownFormatError::new(enabled_features)))
+            } else {
+                Ok(Some(first_enabled_feature))
             }
-            Some(first_enabled_feature)
         };
 
         // Manual format option  >  file extension  >  guessed feature
-        // TODO: Code should probably be refactored as it's quite messy
         if options.format == None {
             options.format = match path.extension() {
                 Some(extension) => {
                     // - Based on the extension
                     match ConfigFormat::from_extension(extension) {
                         Some(value) => Some(value),
-                        None => guess_from_feature()
+                        None => {
+                            guess_from_feature()?
+                        }
                     }
                 },
                 _ => {
                     // - Guessing based on the enabled features
-                    guess_from_feature()
+                    guess_from_feature()?
                 }
             };
         }
@@ -362,8 +391,8 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             },
             // If the conversion failed
             Err(e) => {
-                // This error triggering sometimes seems to mean a
-                // data type you're using in your custom data struct isn't supported
+                // This error triggering sometimes seems to mean a data type you're using in your
+                // custom data struct isn't supported, but I haven't fully tested it.
                 return Err(ConfigSaveError::SerializationError(e));
             }
         };

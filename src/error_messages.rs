@@ -1,14 +1,15 @@
+use std::fmt::Formatter;
+use crate::{DataParseError, UnknownFormatError};
+
 // - This module serves as a way to print out useful error messages
 //   for both the end user, and the developer.
-
+// ------------------------------------------------------------------
 // #[cfg(debug_assertions)]      - are developer-shown errors
 // #[cfg(not(debug_assertions))] - are user-shown errors
+// ------------------------------------------------------------------
 
 
-use crate::DataParseError;
-
-// - Data Parse Error
-//   default error handler
+// Data parsing error
 impl std::error::Error for DataParseError {}
 impl std::fmt::Display for DataParseError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -44,8 +45,21 @@ impl std::fmt::Display for DataParseError {
 				write!(f, "Deserialization: An error occurred trying to convert a string into a config object.\n
 						   [err] Config file isn't valid according to it's format ({format})\n
 						   [tip]: {tip}")
-			},
+			}
 		}
 	}
 }
 
+// Unknown file format (json, toml, etc)
+impl std::error::Error for UnknownFormatError {}
+impl std::fmt::Display for UnknownFormatError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		write!(f, "The format had to be guessed from {} other features.\
+				  \nYou should consider:\
+				  \n- Adding a file extension at the end of your config file's path\
+				  \n- Passing a `ConfigSetupOptions` struct into `Config::from_options`\
+				  \n- Enabling only one format in the fast_config features",
+			   self.found_formats.len()
+		)
+	}
+}

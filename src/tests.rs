@@ -1,5 +1,7 @@
+#![allow(dead_code)]
+
 use log::LevelFilter;
-use crate::{Config, ConfigSetupOptions, format_dependant};
+use crate::{Config, ConfigFormat, ConfigSetupOptions, format_dependant};
 use serde::{Serialize, Deserialize};
 
 // Sub-data
@@ -39,7 +41,15 @@ fn run() {
     // Creating options
     let options = ConfigSetupOptions {
         pretty: true,
-        ..Default::default()
+        format: {
+            #[cfg(all(feature = "json5", feature = "toml", feature = "yaml"))] {
+                Some(ConfigFormat::JSON5)
+            }
+            #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))] {
+                None
+            }
+        },
+        .. Default::default()
     };
 
     // Creating the config and saving it
@@ -60,7 +70,7 @@ fn run() {
                 boolean:  false
             }
         };
-        let config = Config::new("./config/testconfig", data).unwrap();
+        let config = Config::from_options("./config/testconfig", options, data).unwrap();
         let default = MyData::default();
         assert_eq!(config.data.number, i32::MAX);
         assert_eq!(config.data.subdata.string, default.subdata.string);
@@ -85,8 +95,6 @@ fn run() {
     }
 }
 
-// TODO: Advanced test code should be refactored as it looks incredibly messy.
-//       Doesn't really matter due to the fact it's a test, though
 fn advanced_test() {
     #[derive(Debug)]
     pub enum FormatFinder {
@@ -112,7 +120,7 @@ fn advanced_test() {
     let available = format_dependant::get_enabled_features();
     let mut cases = Vec::with_capacity(
         3  /* `push` calls */
-        * 2       /* `pretty` multiplier */
+        * 2       /* `pretty` switches (for _ in 0..2) */
     );
     let mut pretty = false;
     for _ in 0..2 {
@@ -125,26 +133,32 @@ fn advanced_test() {
                 FormatFinder::Config(format.clone()),
                 pretty
             ));
-            cases.push(Case::new(
-                FormatFinder::Feature,
-                pretty
-            ));
+            #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))] {
+                cases.push(Case::new(
+                    FormatFinder::Feature,
+                    pretty
+                ));
+            }
         }
         pretty = !pretty;
     }
 
     // Automated case-based tests
+    println!("######## Case test started! ########");
     for case in cases {
         let mut path = String::from("./config/advtestconfig");
         let mut format = None;
         match case.format_finder {
             FormatFinder::GuessExtension(ext) => {
+                println!("\n\n------ GUESS EXTENSION ------ ");
                 path += format!(".{ext}").as_str();
             },
             FormatFinder::Config(fmt) => {
+                println!("\n\n---------- CONFIG ----------- ");
                 format = Some(fmt);
             },
             FormatFinder::Feature => {
+                println!("\n\n---------- FEATURE ---------- ");
                 format = Some(format_dependant::get_first_enabled_feature());
             }
         };
