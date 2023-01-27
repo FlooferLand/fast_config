@@ -13,11 +13,12 @@ use std::io::{Read, Write};
 use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
 
-// ---------------------------------------------------------------------------------------------
-// TODO: Finish rewriting the documentation for methods / structs
-// TODO: Add panic notifiers in the documentation (if any)
+// This release ----------------------------------------------------------------------------------
+// TODO: Finish rewriting the documentation for the entire crate
+// TODO: Test the entire project and rewrite any unsafe code (ready up for release)
+// Next release ---------------------------------------------------------------------------------
 // TODO: Add in an option to automatically save the config when the Config object is dropped
-// ---------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
 compile_error!("You must install at least one format feature: `json5`, `toml`, or `yaml`");
