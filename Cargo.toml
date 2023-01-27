@@ -4,11 +4,14 @@ version = "1.0.0"
 edition = "2021"
 authors = ["FlooferLand"]
 description = "A small and simple multi-format crate to handle config files"
-repository = "https://github.com/FlooferLand/fast_config"
 keywords = ["settings", "config", "configuration", "easy", "json5"]
 categories = ["config"]
+
+# Github stuff
+readme = "README.md"
 license-file = "./LICENSE"
 documentation = "https://docs.rs/fast_config"
+repository = "https://github.com/FlooferLand/fast_config"
 
 [dev-dependencies]
 env_logger = "0.10.0"
