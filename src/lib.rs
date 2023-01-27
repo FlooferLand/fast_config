@@ -35,46 +35,42 @@ pub use error_messages::*;
 /// The object you use to configure
 /// which file format to use
 /// 
-/// You use it in [`ConfigOptions`]!
-#[derive(Debug, PartialEq, Copy, Clone)]
+/// You use it in [`ConfigSetupOptions`]!
+#[derive(Debug, PartialEq, Copy, Clone, Hash)]
 pub enum ConfigFormat {
-    JSON5,
-    TOML,
-    YAML,
-    None
+    #[cfg(feature = "json5")] JSON5,
+    #[cfg(feature = "toml")]  TOML,
+    #[cfg(feature = "yaml")]  YAML
 }
 impl ConfigFormat {
     /// Takes in an OsString and returns a ConfigFormat
-    pub fn from_extension(ext: &OsStr) -> Self {
-        if ext.len() <= 2 {
-            return ConfigFormat::None;
-        }
-
+    pub fn from_extension(ext: &OsStr) -> Option<Self> {
         let ext = ext.to_ascii_lowercase()
             .to_string_lossy()
             .replace('\u{FFFD}', "");
                 
         // Matching
         match ext.as_str() {
-            "json" | "json5" => ConfigFormat::JSON5,
-            "toml"           => ConfigFormat::TOML,
-            "yaml" | "yml"   => ConfigFormat::YAML,
-            _ => ConfigFormat::None
+            "json" | "json5" => Some(ConfigFormat::JSON5),
+            "toml"           => Some(ConfigFormat::TOML),
+            "yaml" | "yml"   => Some(ConfigFormat::YAML),
+            _ => None
         }
     }
 }
 impl Display for ConfigFormat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let string = match self {
-            ConfigFormat::None => {
-                log::error!("Format \"None\" should never be shown using Display! (unsafe)");
-                String::new()
-            }
-            _ => {
-                format!("{self:?}").to_lowercase()
-            }
+        let output = match self {
+            ConfigFormat::JSON5  => "json5",
+            ConfigFormat::TOML   => "toml",
+            ConfigFormat::YAML   => "yaml"
         };
-        write!(f, "{string}")
+        write!(f, "{output}")
+    }
+}
+impl Default for ConfigFormat {
+    fn default() -> Self {
+        format_dependant::get_first_enabled_feature()
     }
 }
 
@@ -88,9 +84,9 @@ impl Display for ConfigFormat {
 /// spaces and newline characters, even at scale.
 ///
 /// - `format` - An enum to specify the format language to use *(ex: JSON, TOML, etc.)* <br/>
-/// Takes in an enum of type [`ConfigFormat`]
-/// It's [`ConfigFormat::None`] by default, but it will also try to guess the format based on
-/// the file format and/or enabled features.
+/// Takes in an enum of type [`ConfigFormat`] <br/>
+/// If you don't select a format *(Default)* it will try to guess the format
+/// based on the file extension and/or enabled features.
 ///
 /// # More options are to be added later!
 /// Pass `..` [`Default::default()`] at the end of your construction
@@ -98,7 +94,7 @@ impl Display for ConfigFormat {
 ///
 /// # Examples:
 /// ```no_run
-/// use fast_config::{ConfigOptions, ConfigFormat, Config};
+/// use fast_config::{ConfigSetupOptions, ConfigFormat, Config};
 /// use serde::{Serialize, Deserialize};
 ///
 /// // Creating a config struct to store our data
@@ -109,9 +105,9 @@ impl Display for ConfigFormat {
 ///
 /// fn main() {
 ///     // Creating the options
-///     let options = ConfigOptions {
+///     let options = ConfigSetupOptions {
 ///         pretty: false,
-///         format: ConfigFormat::JSON5,
+///         format: Some(ConfigFormat::JSON5),
 ///         .. Default::default()
 ///     };
 ///
@@ -126,15 +122,33 @@ impl Display for ConfigFormat {
 /// }
 /// ```
 ///
-pub struct ConfigOptions {
+pub struct ConfigSetupOptions {
     pub pretty: bool,
-    pub format: ConfigFormat
+    pub format: Option<ConfigFormat>
 }
-impl Default for ConfigOptions {
+impl Default for ConfigSetupOptions {
     fn default() -> Self {
         Self {
             pretty: true,
-            format: ConfigFormat::None
+            format: None
+        }
+    }
+}
+
+/// The internally-stored settings type for [`Config`] <br/>
+/// Works and looks like [`ConfigSetupOptions`], with a few key differences.
+pub struct InternalOptions {
+    pub pretty: bool,
+    pub format: ConfigFormat
+}
+impl From<ConfigSetupOptions> for InternalOptions {
+    /// # PANICS!
+    /// This method panics in a controlled manner. <br/>
+    /// Should not be used outside `fast_config`!
+    fn from(options: ConfigSetupOptions) -> Self {
+        Self {
+            pretty: options.pretty,
+            format: options.format.expect("The file format could not be guessed! It appears to be None")
         }
     }
 }
@@ -182,7 +196,7 @@ impl Default for ConfigOptions {
 pub struct Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     pub data: D,
     path: PathBuf,
-    pub options: ConfigOptions
+    pub options: InternalOptions
 }
 impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// Constructs and returns a new config object using the default options.
@@ -198,7 +212,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     ///
     /// If you'd like to configure this object, you should take a look at using [`Config::from_options`] instead.
     pub fn new(path: impl AsRef<Path>, data: D) -> Result<Config<D>, ConfigError> {
-        Self::construct(path, ConfigOptions::default(), data)
+        Self::construct(path, ConfigSetupOptions::default(), data)
     }
 
     /// Constructs and returns a new config object from a set of custom options.
@@ -209,31 +223,52 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// If the file has no extension, the extension will be guessed based on the enabled feature
     /// (or the selected format in your `options`)
     ///
-    /// - `options`: Takes in a [`ConfigOptions`],
+    /// - `options`: Takes in a [`ConfigSetupOptions`],
     /// used to configure the format language, styling of the data, and other things.
     ///
     /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
     /// You have to make this struct yourself, construct it, and pass it in.
     /// More info is provided at [`Config`].
-    pub fn from_options(path: impl AsRef<Path>, options: ConfigOptions, data: D) -> Result<Config<D>, ConfigError> {
+    pub fn from_options(path: impl AsRef<Path>, options: ConfigSetupOptions, data: D) -> Result<Config<D>, ConfigError> {
         Self::construct(path, options, data)
     }
 
     // Main, private constructor
-    fn construct(path: impl AsRef<Path>, mut options: ConfigOptions, mut data: D) -> Result<Config<D>, ConfigError> {
+    fn construct(path: impl AsRef<Path>, mut options: ConfigSetupOptions, mut data: D) -> Result<Config<D>, ConfigError> {
         let mut path = PathBuf::from(path.as_ref());
 
-        // Guessing the file format
-        options.format = match (options.format, path.extension()) {
-            (ConfigFormat::None, Some(ext)) => {
-                // - Based on the extension
-                ConfigFormat::from_extension(ext)
-            },
-            _ => {
-                // - Based on the enabled features
-                format_dependant::get_first_enabled_feature()
+        // Setting up variables
+        let features_count = format_dependant::get_enabled_features().len();
+        let first_enabled_feature = format_dependant::get_first_enabled_feature();
+        let guess_from_feature = || {
+            if features_count > 1 {
+                log::error!("The format had to be guessed from {features_count} other features.\
+                              \nYou should consider:\
+                              \n- Adding a file extension at the end of your config file's path\
+                              \n- Passing a `ConfigSetupOptions` struct into `Config::from_options`\
+                              \n- Enabling only one format in the fast_config features")
             }
+            Some(first_enabled_feature)
         };
+
+        // Manual format option  >  file extension  >  guessed feature
+        // TODO: Code should probably be refactored as it's quite messy
+        if options.format == None {
+            options.format = match path.extension() {
+                Some(extension) => {
+                    // - Based on the extension
+                    match ConfigFormat::from_extension(extension) {
+                        Some(value) => Some(value),
+                        None => guess_from_feature()
+                    }
+                },
+                _ => {
+                    // - Guessing based on the enabled features
+                    guess_from_feature()
+                }
+            };
+        }
+        let options = InternalOptions::from(options);
 
         // Setting the file format
         if path.extension().is_none() {

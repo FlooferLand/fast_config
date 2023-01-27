@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::{ConfigFormat, ConfigOptions};
+use crate::{ConfigFormat, InternalOptions};
 use crate::extensions::{GenericResult, ResultGeneralize};
 
 // Getting the enabled features via code
@@ -30,7 +30,7 @@ pub fn get_first_enabled_feature() -> ConfigFormat {
 }
 
 // Creates a new string from an existing data object (Serialization)
-pub fn to_string<D>(value: &D, options: &ConfigOptions) -> GenericResult<String> where D: Serialize {
+pub fn to_string<D>(value: &D, options: &InternalOptions) -> GenericResult<String> where D: Serialize {
     match options.format {
         #[cfg(feature = "json5")]
         ConfigFormat::JSON5 => {
@@ -60,9 +60,7 @@ pub fn to_string<D>(value: &D, options: &ConfigOptions) -> GenericResult<String>
                     Ok(crate::utils::compress_string(string.unwrap()))
                 }
             }
-        },
-
-        _ => Err("No format selected (to_string)").generalize()
+        }
     }
 }
 
@@ -81,10 +79,7 @@ pub fn from_string<'a, D>(value: &'a String, format: &ConfigFormat) -> GenericRe
 
         #[cfg(feature = "yaml")]
         ConfigFormat::YAML =>
-            serde_yaml::from_str::<D>(value).generalize(),
-
-        _ =>
-            Err("No format selected (from_string)").generalize()
+            serde_yaml::from_str::<D>(value).generalize()
     }
 }
 

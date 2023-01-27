@@ -1,4 +1,4 @@
-use fast_config::{Config, ConfigError, ConfigOptions, DataParseError};
+use fast_config::{Config, ConfigSetupOptions, ConfigError, DataParseError};
 use serde::{Serialize, Deserialize};
 
 // Sub-structs
@@ -35,14 +35,14 @@ fn main() {
     env_logger::init();
 
     // Creating options
-    let options = ConfigOptions {
+    let options = ConfigSetupOptions {
         pretty: false,
         .. Default::default()
     };
 
     // Creating a new config struct with our data struct (it can also guess the file extension)
     let result = Config::from_options(
-        "./config/compressed/myconfig",
+        "./config/myconfig",
         options,
         MyData::default()
     );

@@ -1,5 +1,5 @@
 use log::LevelFilter;
-use crate::{Config, ConfigOptions, format_dependant};
+use crate::{Config, ConfigSetupOptions, format_dependant};
 use serde::{Serialize, Deserialize};
 
 // Sub-data
@@ -37,7 +37,7 @@ fn run() {
         .init();
 
     // Creating options
-    let options = ConfigOptions {
+    let options = ConfigSetupOptions {
         pretty: true,
         ..Default::default()
     };
@@ -111,8 +111,8 @@ fn advanced_test() {
     //     being moved into an array via a macro
     let available = format_dependant::get_enabled_features();
     let mut cases = Vec::with_capacity(
-        3    /* `push` calls */
-        * 2  /* `pretty` */
+        3  /* `push` calls */
+        * 2       /* `pretty` multiplier */
     );
     let mut pretty = false;
     for _ in 0..2 {
@@ -136,19 +136,21 @@ fn advanced_test() {
     // Automated case-based tests
     for case in cases {
         let mut path = String::from("./config/advtestconfig");
-        let mut format = ConfigOptions::default().format;
+        let mut format = None;
         match case.format_finder {
             FormatFinder::GuessExtension(ext) => {
                 path += format!(".{ext}").as_str();
             },
             FormatFinder::Config(fmt) => {
-                format = fmt;
+                format = Some(fmt);
             },
-            FormatFinder::Feature => {}
+            FormatFinder::Feature => {
+                format = Some(format_dependant::get_first_enabled_feature());
+            }
         };
 
         // Creating options
-        let options = ConfigOptions {
+        let options = ConfigSetupOptions {
             pretty: case.pretty,
             format,
             ..Default::default()
