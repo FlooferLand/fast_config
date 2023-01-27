@@ -9,7 +9,7 @@
 [<img alt="license" src="https://img.shields.io/github/license/FlooferLand/fast_config?style=flat"/>](https://github.com/FlooferLand/fast_config/blob/main/LICENSE)
 [<img alt="code size" src="https://img.shields.io/github/languages/code-size/FlooferLand/fast_config?style=flat"/>](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 [<img alt="issues" src="https://img.shields.io/github/issues/FlooferLand/fast_config?label=open%20issues&style=flat"/>](https://github.com/FlooferLand/fast_config/issues)
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/FlooferLand/fast_config/rust.yml)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/FlooferLand/fast_config/main_test.yml)
 
 A small, safe, lightweight, and easy-to-use Rust crate to read and write to config files.
 
