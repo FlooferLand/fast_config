@@ -30,7 +30,7 @@ mod tests;
 
 
 // Separated things
-pub use error::*;
+use error::*;
 pub use error_messages::*;
 
 
