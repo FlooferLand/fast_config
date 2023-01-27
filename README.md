@@ -36,7 +36,9 @@ and it also provides you with *some* options regarding styling your config files
 - Ridiculously simple to use *(only takes 3 lines of short code to make a config file, write/read something, and save it)*
 
 ### Why not this crate?
-- It's not usable if you don't know the way the data will look like
+- It doesn't work if you don't know the way your data will be formatted
+  *(for example if you want your users to be able to have any keys ranging from `key0` to `key9000` in an object)*
+- It cannot currently understand the RON file format
 
 ### ⚠ Documentation and tests are still being made! ⚠
 This crate has now entered the 'stable' stage, i however haven't battle-tested this in any big projects,
@@ -44,6 +46,9 @@ so while there will NOT be any panics or crashes,
 some user-side error handling in particular might be a bit bugged
 
 Documentation might be a little weird or incomplete at the current moment, too.
+
+Feel free to contribute any fixes or [open up an issue](https://github.com/FlooferLand/fast_config/issues) if you find
+anything that isn't working as it should!
 
 ---
 
