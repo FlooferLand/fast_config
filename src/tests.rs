@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use log::LevelFilter;
-use crate::{Config, ConfigFormat, ConfigSetupOptions, format_dependant};
+use crate::{Config, ConfigSetupOptions, format_dependant};
 use serde::{Serialize, Deserialize};
 
 // Sub-data
@@ -43,7 +43,7 @@ fn run() {
         pretty: true,
         format: {
             #[cfg(all(feature = "json5", feature = "toml", feature = "yaml"))] {
-                Some(ConfigFormat::JSON5)
+                Some(crate::ConfigFormat::JSON5)
             }
             #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))] {
                 None

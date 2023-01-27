@@ -261,7 +261,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     //
     /// - `options`: Takes in a [`ConfigSetupOptions`],
     /// used to configure the format language, styling of the data, and other things. <br/>
-    /// Remember to add `..` [`default::Default()`] at the end of your `options` as more options are
+    /// Remember to add `..` [`Default::default()`] at the end of your `options` as more options are
     /// going to be added to the crate later on.
     ///
     /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]

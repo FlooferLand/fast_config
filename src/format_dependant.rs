@@ -61,7 +61,10 @@ pub fn to_string<D>(value: &D, options: &InternalOptions) -> GenericResult<Strin
                     Ok(crate::utils::compress_string(string.unwrap()))
                 }
             }
-        }
+        },
+
+        #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))]
+        _ => Err("Format feature not enabled!".to_string())
     }
 }
 
@@ -80,7 +83,10 @@ pub fn from_string<'a, D>(value: &'a String, format: &ConfigFormat) -> GenericRe
 
         #[cfg(feature = "yaml")]
         ConfigFormat::YAML =>
-            serde_yaml::from_str::<D>(value).generalize()
+            serde_yaml::from_str::<D>(value).generalize(),
+
+        #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))]
+        _ => Err("Format feature not enabled!".to_string())
     }
 }
 
