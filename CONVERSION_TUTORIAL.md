@@ -94,3 +94,5 @@ ___The only difference being that the `save` method returns a `Result` now.___
 These are most of the big changes, however, there are also a lot of smaller ones
 like the fact a LOT more of the API has been exposed. <br/>
 For example, you can now access and set the `path` of your config any time you'd want after creating it.
+
+You can view the [examples](./examples) directory for examples regarding the new syntax.
