@@ -10,9 +10,15 @@ exclude = ["src/tests.rs", "test.cmd"]
 
 # Github stuff
 readme = "README.md"
-license-file = "./LICENSE"
+license = "MIT"
 documentation = "https://docs.rs/fast_config"
 repository = "https://github.com/FlooferLand/fast_config"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[badges]
+maintenance = { status = "actively-developed" }
 
 [dev-dependencies]
 env_logger = "0.10.0"

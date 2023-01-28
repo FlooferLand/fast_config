@@ -26,7 +26,7 @@ use serde::{Serialize, Deserialize};
 
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
-compile_error!("You must install at least one format feature: \"json5\", \"toml\", or \"yaml\"");
+compile_error!("You must install at least one format feature: `json5`, `toml`, or `yaml`");
 // ^ --- HEY, user! --- ^
 // To do this, you can replace `fast_config = ".."` with
 // `fast_config = { version = "..", features = ["json5"] }` in your cargo.toml file.
