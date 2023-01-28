@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 pub mod error;
-mod error_messages;
+pub mod error_messages;
 mod extensions;
 mod format_dependant;
 mod utils;
@@ -10,15 +10,15 @@ use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io::{Read, Write};
-use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
+use serde::{Serialize, Deserialize};
 
 // This release ----------------------------------------------------------------------------------
 // .. Nothing to do!
 // Next release ---------------------------------------------------------------------------------
+// TODO: Make JSON, TOML, and YAML keep comments after being written to
 // TODO: Add in an option to automatically save the config when the Config object is dropped
 // TODO: Add in a "from_string" method and an "empty" constructor
-// TODO: Add in an option
 // ----------------------------------------------------------------------------------------------
 
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
@@ -30,7 +30,6 @@ mod tests;
 
 
 // Separated things
-use error::*;
 pub use error_messages::*;
 
 
@@ -199,10 +198,7 @@ impl TryFrom<ConfigSetupOptions> for InternalOptions {
 /// This allows for the most amount of performance and safety,
 /// while also allowing you to add additional features by adding `impl` blocks on your struct.
 ///
-/// [`Serialize`]: serde::Serialize
-/// [`Deserialize`]: serde::Deserialize
-///
-/// Your data struct needs to implement [`serde::Serialize`] and [`serde::Deserialize`].
+/// Your data struct needs to implement [`Serialize`] and [`Deserialize`].
 /// In most cases you can just use `#[derive(Serialize, Deserialize)]` to derive them.
 ///
 /// # Examples
@@ -230,7 +226,7 @@ impl TryFrom<ConfigSetupOptions> for InternalOptions {
 ///
 pub struct Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     pub data: D,
-    path: PathBuf,
+    pub path: PathBuf,
     pub options: InternalOptions
 }
 impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
@@ -242,12 +238,12 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// - `path`: Takes in a path to where the config file is or should be located.
     /// If the file has no extension, the crate will attempt to guess the extension from one available format `feature`.
     ///
-    /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
+    /// - `data`: Takes in a struct that inherits [`Serialize`] and [`Deserialize`]
     /// You have to make this struct yourself, construct it, and pass it in.
     /// More info about it is provided at [`Config`].
     ///
     /// If you'd like to configure this object, you should take a look at using [`Config::from_options`] instead.
-    pub fn new(path: impl AsRef<Path>, data: D) -> Result<Config<D>, ConfigError> {
+    pub fn new(path: impl AsRef<Path>, data: D) -> Result<Config<D>, error::ConfigError> {
         Self::construct(path, ConfigSetupOptions::default(), data)
     }
 
@@ -264,15 +260,15 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// Remember to add `..` [`Default::default()`] at the end of your `options` as more options are
     /// going to be added to the crate later on.
     ///
-    /// - `data`: Takes in a struct that inherits [`serde::Serialize`] and [`serde::Deserialize`]
+    /// - `data`: Takes in a struct that inherits [`Serialize`] and [`Deserialize`]
     /// You have to make this struct yourself, construct it, and pass it in.
     /// More info is provided at [`Config`].
-    pub fn from_options(path: impl AsRef<Path>, options: ConfigSetupOptions, data: D) -> Result<Config<D>, ConfigError> {
+    pub fn from_options(path: impl AsRef<Path>, options: ConfigSetupOptions, data: D) -> Result<Config<D>, error::ConfigError> {
         Self::construct(path, options, data)
     }
 
     // Main, private constructor
-    fn construct(path: impl AsRef<Path>, mut options: ConfigSetupOptions, mut data: D) -> Result<Config<D>, ConfigError> {
+    fn construct(path: impl AsRef<Path>, mut options: ConfigSetupOptions, mut data: D) -> Result<Config<D>, error::ConfigError> {
         let mut path = PathBuf::from(path.as_ref());
 
         // Setting up variables
@@ -280,7 +276,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         let first_enabled_feature = format_dependant::get_first_enabled_feature();
         let guess_from_feature = || {
             if enabled_features.len() > 1 {
-                Err(ConfigError::UnknownFormat(UnknownFormatError::new(None, enabled_features.clone())))
+                Err(error::ConfigError::UnknownFormat(error::UnknownFormatError::new(None, enabled_features.clone())))
             } else {
                 Ok(Some(first_enabled_feature))
             }
@@ -309,8 +305,8 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         let options: InternalOptions = match InternalOptions::try_from(options) {
             Ok(value) => value,
             Err(message) => {
-                return Err(ConfigError::UnknownFormat(
-                    UnknownFormatError::new(Some(message), enabled_features)
+                return Err(error::ConfigError::UnknownFormat(
+                    error::UnknownFormatError::new(Some(message), enabled_features)
                 ));
             }
         };
@@ -325,7 +321,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             // Reading from the file if a file was found
             let mut content = String::new();
             if let Err(err) = file.read_to_string(&mut content) {
-                return Err(ConfigError::InvalidFileEncoding(err, path));
+                return Err(error::ConfigError::InvalidFileEncoding(err, path));
             };
 
             // Deserialization
@@ -333,8 +329,8 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             if let Ok(value) = format_dependant::from_string(&content, &options.format) {
                 data = value;
             } else {
-                return Err(ConfigError::DataParseError(
-                    DataParseError::Deserialize(options.format, content)
+                return Err(error::ConfigError::DataParseError(
+                    error::DataParseError::Deserialize(options.format, content)
                 ));
             };
         } else {
@@ -342,7 +338,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             match path.parent() {
                 Some(dirs) => {
                     if let Err(err) = fs::create_dir_all(dirs) {
-                        return Err(ConfigError::IoError(err));
+                        return Err(error::ConfigError::IoError(err));
                     }
                 },
                 None => {}
@@ -351,7 +347,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             // Creating the config file itself
             // (should never fail due to the code above)
             if let Err(err) = fs::File::create(&path) {
-                return Err(ConfigError::IoError(err));
+                return Err(error::ConfigError::IoError(err));
             }
         }
 
@@ -377,7 +373,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// and it might've ended up in some users getting confused, as well as a tiny bit of performance overhead.
     ///
     /// If you'd like this feature to be back feel free to open an issue and I'll add it back right away!
-    pub fn save(&self) -> Result<(), ConfigSaveError> {
+    pub fn save(&self) -> Result<(), error::ConfigSaveError> {
         let to_string = format_dependant::to_string(&self.data, &self.options);
         match to_string {
             // If the conversion was successful
@@ -387,7 +383,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
                     Ok(mut file) => {
                         // Writing data to the writer
                         if let Err(err) = write!(file, "{data}") {
-                            return Err(ConfigSaveError::IoError(err));
+                            return Err(error::ConfigSaveError::IoError(err));
                         }
                     },
                     // File could not be created
@@ -399,7 +395,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
 
                         // Attempt to create the file again before throwing an error
                         if let Err(err) = fs::File::create(&self.path) {
-                            return Err(ConfigSaveError::IoError(err));
+                            return Err(error::ConfigSaveError::IoError(err));
                         }
                     }
                 };
@@ -408,7 +404,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             Err(e) => {
                 // This error triggering sometimes seems to mean a data type you're using in your
                 // custom data struct isn't supported, but I haven't fully tested it.
-                return Err(ConfigSaveError::SerializationError(e));
+                return Err(error::ConfigSaveError::SerializationError(e));
             }
         };
         Ok(())

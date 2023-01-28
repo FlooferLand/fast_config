@@ -6,9 +6,7 @@ authors = ["FlooferLand"]
 description = "A small and simple multi-format crate to handle config files"
 keywords = ["settings", "config", "configuration", "easy", "json5"]
 categories = ["config"]
-exclude = [
-    "src/tests.rs"
-]
+exclude = ["src/tests.rs", "test.cmd"]
 
 # Github stuff
 readme = "README.md"
@@ -20,17 +18,20 @@ repository = "https://github.com/FlooferLand/fast_config"
 env_logger = "0.10.0"
 
 [dependencies]
-serde = { version = "1.0.152", features = ["serde_derive", "derive"] }
+serde = { version = "1.0.152", features = ["serde_derive", "derive"], optional = false }
 log = "0.4.17"
-thiserror = "1.0.38"
+thiserror = "1.0.29"
 
 # Optional
 json5 = { version = "0.4.1",  optional = true }
-toml  = { version = "0.5.10", optional = true }
+toml  = { version = "0.7.0", optional = true }
 serde_yaml = { version = "0.9.16",  optional = true }
+
+# Optional deps
 serde_json = { version = "1.0.91", optional = true }
 
 [features]
 default = []
 json5 = ["dep:json5", "dep:serde_json"]
+toml  = ["dep:toml"]
 yaml  = ["dep:serde_yaml"]

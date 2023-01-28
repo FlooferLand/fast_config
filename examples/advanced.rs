@@ -1,4 +1,5 @@
-use fast_config::{Config, ConfigSetupOptions, ConfigError, DataParseError};
+use fast_config::{Config, ConfigSetupOptions};
+use fast_config::error::{ConfigError, DataParseError};
 use serde::{Serialize, Deserialize};
 
 // Sub-structs

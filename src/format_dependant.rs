@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use crate::{ConfigFormat, InternalOptions};
 use crate::extensions::{GenericResult, ResultGeneralize};
 
@@ -70,7 +71,7 @@ pub fn to_string<D>(value: &D, options: &InternalOptions) -> GenericResult<Strin
 
 
 // Creates a new data object from a string (Deserialization)
-pub fn from_string<'a, D>(value: &'a String, format: &ConfigFormat) -> GenericResult<D> where D: Deserialize<'a> {
+pub fn from_string<D>(value: &String, format: &ConfigFormat) -> GenericResult<D> where D: DeserializeOwned {
     let value = value.as_str();
     match format {
         #[cfg(feature = "json5")]

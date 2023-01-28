@@ -41,7 +41,7 @@ pub enum ConfigError {
 	/// Occurs when a file isn't composed of valid UTF-8 characters.
 	/// - Stores the path to the erroring file
 	#[error("InvalidFileEncoding: Failed to read file data of \"{:?}\" into a valid UTF-8 string.", .0)]
-    InvalidFileEncoding(std::io::Error, PathBuf),
+	InvalidFileEncoding(std::io::Error, PathBuf),
 
 	/// Occurs when the file could not be saved due to filesystem-related errors. <br/>
 	/// Usually when one of the parent directories for the config file could not

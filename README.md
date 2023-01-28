@@ -14,7 +14,7 @@
 A small, safe, lightweight, and easy-to-use Rust crate to read and write to config files.
 
 Currently only supports: JSON5, TOML, and YAML.
-But more formats (such as RON) are planned to be added later.
+But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planned to be added later.
 
 *[- click here to view code examples](#examples)*
 <br style="display: block; margin: 0 0; content: '---'" />
@@ -93,7 +93,7 @@ fn main() {
 3. Enable the feature(s) for the format(s) you'd like to use <br/>
    - Currently only `json5`, `toml`, and `yaml` are supported <br/>
 ---
-4. Create a struct to hold your data that derives `serde::Serialize` and `serde::Deserialize`
+4. Create a struct to hold your data that derives `Serialize` and `Deserialize`
 ---
 5. Create an instance of your data struct
 - Optionally `use` the crate's `Config` type for convenience <br/>

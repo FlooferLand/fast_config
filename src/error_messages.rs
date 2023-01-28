@@ -1,5 +1,5 @@
 use std::fmt::Formatter;
-use crate::{DataParseError, UnknownFormatError};
+use crate::error::{DataParseError, UnknownFormatError};
 
 // - This module serves as a way to print out useful error messages
 //   for both the end user, and the developer.
@@ -18,7 +18,7 @@ impl std::fmt::Display for DataParseError {
 			DataParseError::Serialize(_format) => {
 				let tip = {
 					#[cfg(debug_assertions)] {
-						"Your config's data types must all implement serde::Serialize and Deserialize!"
+						"Your config's data types must all implement Serialize and Deserialize!"
 					}
 					#[cfg(not(debug_assertions))] {
 						"This is likely an issue caused by the `Serialize` implementation of the program you are using."

@@ -2,7 +2,7 @@
 
 use log::LevelFilter;
 use crate::{Config, ConfigSetupOptions, format_dependant};
-use serde::{Serialize, Deserialize};
+use crate::{Serialize, Deserialize};
 
 // Sub-data
 #[derive(Serialize, Deserialize)]
