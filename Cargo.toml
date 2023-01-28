@@ -1,6 +1,6 @@
 [package]
 name = "fast_config"
-version = "1.1.2"
+version = "1.1.3"
 edition = "2021"
 authors = ["FlooferLand"]
 description = "A small and simple multi-format crate to handle config files"
