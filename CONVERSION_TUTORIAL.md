@@ -76,8 +76,8 @@ Very epic!
 
 There is an entire `ConfigError` enum you can match on for errors.
 
-Modifying and saving configs works the same way it did before in terms of syntax.
-The only difference being that the `save` method returns a `Result` now.
+Modifying and saving configs works the same way it did before in terms of syntax. <br/>
+___The only difference being that the `save` method returns a `Result` now.___
 
 ### 3. Some renames / changes
 
@@ -87,7 +87,7 @@ The only difference being that the `save` method returns a `Result` now.
   *(guessing formats might fail in some cases, there's a `Result` error for it)*.
 ---
 - `ConfigOptions` has been renamed to `ConfigSetupOptions`,
-  as it is converted to an `InteralOptions` struct internally due to safety reasons
+  as it is internally converted to an `InteralOptions` struct due to safety reasons
 ---
 
 ## That's it!
