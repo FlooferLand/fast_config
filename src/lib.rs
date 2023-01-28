@@ -99,6 +99,8 @@ impl Default for ConfigFormat {
 
 /// Used to configure the [`Config`] object
 ///
+/// [`UnknownFormatError`]: error::UnknownFormatError
+///
 /// # Attributes
 /// - `pretty` - Makes the contents of the config file more humanly-readable.
 /// When `false`, it will try to compact down the config file data so it takes up less storage space.
