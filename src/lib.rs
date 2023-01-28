@@ -13,16 +13,25 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use serde::{Serialize, Deserialize};
 
+
 // This release ----------------------------------------------------------------------------------
 // .. Nothing to do!
 // Next release ---------------------------------------------------------------------------------
 // TODO: Make JSON, TOML, and YAML keep comments after being written to
+// TODO: Attempt to compress TOML, and YAML when pretty is turned off.
 // TODO: Add in an option to automatically save the config when the Config object is dropped
 // TODO: Add in a "from_string" method and an "empty" constructor
 // ----------------------------------------------------------------------------------------------
 
+
+
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
-compile_error!("You must install at least one format feature: `json5`, `toml`, or `yaml`");
+compile_error!("You must install at least one format feature: \"json5\", \"toml\", or \"yaml\"");
+// ^ --- HEY, user! --- ^
+// To do this, you can replace `fast_config = ".."` with
+// `fast_config = { version = "..", features = ["json5"] }` in your cargo.toml file.
+// You can simply replace that "json5" with any of the stated above if you want other formats.
+
 
 // Bug testing
 #[cfg(test)]
