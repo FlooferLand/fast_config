@@ -1,7 +1,11 @@
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use crate::{ConfigFormat, InternalOptions};
-use crate::extensions::{GenericResult, ResultGeneralize};
+use crate::extensions::GenericResult;
+
+// Fixes an unused warning when the user hasn't selected any format
+#[cfg(any(feature = "json5", feature = "toml", feature = "yaml"))]
+use crate::extensions::ResultGeneralize;
 
 // Getting the enabled features via code
 pub fn get_enabled_features() -> Vec<ConfigFormat> {
