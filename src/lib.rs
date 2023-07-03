@@ -14,14 +14,15 @@ use std::path::{Path, PathBuf};
 use serde::{Serialize, Deserialize};
 
 
-// This release ----------------------------------------------------------------------------------
+// This release ----------------------------------------------------------------
 // .. Nothing to do!
-// Next release ---------------------------------------------------------------------------------
+// Next release ----------------------------------------------------------------
 // TODO: Make JSON, TOML, and YAML keep comments after being written to
 // TODO: Attempt to compress TOML, and YAML when pretty is turned off.
-// TODO: Add in an option to automatically save the config when the Config object is dropped
 // TODO: Add in a "from_string" method and an "empty" constructor
-// ----------------------------------------------------------------------------------------------
+// PS: -------------------------------------------------------------------------
+// This project is being rewritten
+// -----------------------------------------------------------------------------
 
 
 
@@ -112,9 +113,11 @@ impl Default for ConfigFormat {
 /// If you don't select a format *(Option::None)* it will try to guess the format
 /// based on the file extension and enabled features. <br/>
 /// If this step fails, an [`UnknownFormatError`] will be returned.
+/// 
+/// - `save_on_drop` - Attempts to save your config when it's dropped, ignoring any errors.
 ///
 /// # More options are to be added later!
-/// Pass `..` [`Default::default()`] at the end of your construction
+/// Pass `.. `[`Default::default()`] at the end of your construction
 /// to prevent yourself from getting errors in the future!
 ///
 /// # Examples:
@@ -157,13 +160,15 @@ impl Default for ConfigFormat {
 #[derive(Clone, Copy)]
 pub struct ConfigSetupOptions {
     pub pretty: bool,
-    pub format: Option<ConfigFormat>
+    pub format: Option<ConfigFormat>,
+	pub save_on_drop: bool
 }
 impl Default for ConfigSetupOptions {
     fn default() -> Self {
         Self {
             pretty: true,
-            format: None
+            format: None,
+			save_on_drop: false
         }
     }
 }
@@ -172,7 +177,8 @@ impl Default for ConfigSetupOptions {
 /// Works and looks like [`ConfigSetupOptions`], with a few internally-required key differences.
 pub struct InternalOptions {
     pub pretty: bool,
-    pub format: ConfigFormat
+    pub format: ConfigFormat,
+	pub save_on_drop: bool
 }
 impl TryFrom<ConfigSetupOptions> for InternalOptions {
     /// This function converts a [`ConfigSetupOptions`] into an internally-used [`InternalOptions`].
@@ -194,6 +200,7 @@ impl TryFrom<ConfigSetupOptions> for InternalOptions {
         Ok(Self {
             pretty: options.pretty,
             format,
+			save_on_drop: options.save_on_drop
         })
     }
 }
@@ -240,6 +247,7 @@ pub struct Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     pub path: PathBuf,
     pub options: InternalOptions
 }
+
 impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// Constructs and returns a new config object using the default options.
     ///
@@ -419,5 +427,20 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             }
         };
         Ok(())
+    }
+
+	/// Gets the name of the config file
+	pub fn filename(&self) -> String {
+		self.path.file_name().unwrap()
+			.to_string_lossy()
+			.to_string()
+	}
+}
+
+impl<D> Drop for Config<D> where for<'a> D: Deserialize<'a> + Serialize  {
+    fn drop(&mut self) {
+        if self.options.save_on_drop {
+			let _ = self.save();
+		}
     }
 }

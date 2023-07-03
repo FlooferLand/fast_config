@@ -29,27 +29,22 @@ But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planne
 
 - *[Click here to jump to the **[Getting Started]** section](#getting-started)*
 
-### NOTE: I'm taking a 1-3 month break from this project
-I've been working on it the _WHOLE_ week, around ___6 hours___ every day/night.
-And I'm feeling very burnt out at the current moment.
-
-I plan on implementing the next big release once I'm back, though!
-_(I keep TODOs for the entire project at the beginning of
-[lib.rs](https://github.com/FlooferLand/fast_config/blob/main/src/lib.rs)
-if anyone wants to check that out)_
-
-I'll also be working on a few side-projects using this crate until the next major release
-to properly battle test it.
-
-The next major release might be a bit far away (weeks or months) unless there's something huge I have to fix.
-
-***Pull requests and issues will still be reviewed, fixed, and accepted!*** <br/>
-Feel free to contribute anything, I'll still be active.
-I just don't plan on implementing any BIG new features myself at the current moment.
-
-#### - Floof
+<br/>
 
 ---
+
+## NOTE: This project will be rewritten sometime soon
+After coming back to this project I've come to realize the code base is VERY messy. </br>
+I've improved a lot as a Rust developer since making this project, and I've been using it in a couple of my projects. I feel i can do way better.
+
+A conversion guide for the rewrite will be available, as I'll have to convert over my projects as well to use the rewritten `fast_config`.
+
+The rewrite should be smaller, safer, and the source code will most importantly be ***way more readable***.
+
+### - Floof
+
+---
+<br/>
 
 ## What is this crate?
 `fast_config` was made to be a faster to set up, more light-weight, statically typed alternative to [config](https://crates.io/crates/config).
