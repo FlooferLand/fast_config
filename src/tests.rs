@@ -1,32 +1,32 @@
 #![allow(dead_code)]
 
+use crate::{format_dependant, Config, ConfigSetupOptions};
+use crate::{Deserialize, Serialize};
 use log::LevelFilter;
-use crate::{Config, ConfigSetupOptions, format_dependant};
-use crate::{Serialize, Deserialize};
 
 // Sub-data
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct SubData {
     pub string: String,
     pub unsigned: u64,
-    pub boolean: bool
+    pub boolean: bool,
 }
 
 // Data
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct MyData {
     pub number: i32,
-    pub subdata: SubData
+    pub subdata: SubData,
 }
 impl Default for MyData {
     fn default() -> Self {
         Self {
             number: 20,
             subdata: SubData {
-                string:   format!("Joe Mama"),
+                string: format!("Joe Mama"),
                 unsigned: 400,
-                boolean:  true
-            }
+                boolean: true,
+            },
         }
     }
 }
@@ -34,27 +34,31 @@ impl Default for MyData {
 #[test]
 fn run() {
     // Logging
-    env_logger::builder()
+    let _ = env_logger::builder()
+        .is_test(true)
         .filter_level(LevelFilter::Info)
-        .init();
+        .try_init();
 
     // Creating options
     let options = ConfigSetupOptions {
         pretty: true,
         format: {
-            #[cfg(all(feature = "json5", feature = "toml", feature = "yaml"))] {
+            #[cfg(all(feature = "json5", feature = "toml", feature = "yaml"))]
+            {
                 Some(crate::ConfigFormat::JSON5)
             }
-            #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))] {
+            #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))]
+            {
                 None
             }
         },
-        .. Default::default()
+        ..Default::default()
     };
 
     // Creating the config and saving it
     {
-        let mut config = Config::from_options("./config/testconfig", options, MyData::default()).unwrap();
+        let mut config =
+            Config::from_options("./config/testconfig", options, MyData::default()).unwrap();
         config.data.number = i32::MAX;
         config.save().unwrap();
     }
@@ -65,10 +69,10 @@ fn run() {
         let data = MyData {
             number: 0,
             subdata: SubData {
-                string:   String::new(),
+                string: String::new(),
                 unsigned: 0,
-                boolean:  false
-            }
+                boolean: false,
+            },
         };
         let config = Config::from_options("./config/testconfig", options, data).unwrap();
         let default = MyData::default();
@@ -100,17 +104,20 @@ fn advanced_test() {
     pub enum FormatFinder {
         GuessExtension(String),
         Config(crate::ConfigFormat),
-        Feature
+        Feature,
     }
-    
+
     #[derive(Debug)]
     pub struct Case {
         pub format_finder: FormatFinder,
-        pub pretty: bool
+        pub pretty: bool,
     }
     impl Case {
         pub fn new(format_finder: FormatFinder, pretty: bool) -> Self {
-            Self { format_finder, pretty }
+            Self {
+                format_finder,
+                pretty,
+            }
         }
     }
 
@@ -120,24 +127,19 @@ fn advanced_test() {
     let available = format_dependant::get_enabled_features();
     let mut cases = Vec::with_capacity(
         3  /* `push` calls */
-        * 2       /* `pretty` switches (for _ in 0..2) */
+        * 2, /* `pretty` switches (for _ in 0..2) */
     );
     let mut pretty = false;
     for _ in 0..2 {
         for format in &available {
             cases.push(Case::new(
                 FormatFinder::GuessExtension(format.to_string()),
-                pretty
+                pretty,
             ));
-            cases.push(Case::new(
-                FormatFinder::Config(format.clone()),
-                pretty
-            ));
-            #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))] {
-                cases.push(Case::new(
-                    FormatFinder::Feature,
-                    pretty
-                ));
+            cases.push(Case::new(FormatFinder::Config(format.clone()), pretty));
+            #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))]
+            {
+                cases.push(Case::new(FormatFinder::Feature, pretty));
             }
         }
         pretty = !pretty;
@@ -153,11 +155,11 @@ fn advanced_test() {
             FormatFinder::GuessExtension(ext) => {
                 println!("\n\n------ GUESS EXTENSION ------ ");
                 path += format!(".{ext}").as_str();
-            },
+            }
             FormatFinder::Config(fmt) => {
                 println!("\n\n---------- CONFIG ----------- ");
                 format = Some(fmt);
-            },
+            }
             FormatFinder::Feature => {
                 println!("\n\n---------- FEATURE ---------- ");
                 format = Some(format_dependant::get_first_enabled_feature());
@@ -177,17 +179,17 @@ fn advanced_test() {
             config.data.number = i32::MAX;
             config.save().unwrap();
         }
- 
+
         // Reading from that config + assertions
         {
             // Test data
             let data = MyData {
                 number: 0,
                 subdata: SubData {
-                    string:   String::new(),
+                    string: String::new(),
                     unsigned: 0,
-                    boolean:  false
-                }
+                    boolean: false,
+                },
             };
             let config = Config::from_options(&path, options, data).unwrap();
             let default = MyData::default();
@@ -197,4 +199,51 @@ fn advanced_test() {
             assert_eq!(config.data.subdata.boolean, default.subdata.boolean);
         }
     }
+}
+
+// what happens if no existing config file?
+#[test]
+fn no_create_if_missing() {
+    const CONFIG_FILE_PATH: &str = "./config/testconfig";
+
+    // Logging
+    let _ = env_logger::builder()
+        .is_test(true)
+        .filter_level(LevelFilter::Info)
+        .try_init();
+    
+    // Creating options
+    let options = ConfigSetupOptions {
+        pretty: true,
+        format: {
+            #[cfg(feature = "toml")]
+            {
+                Some(crate::ConfigFormat::TOML)
+            }
+            #[cfg(not(feature = "toml"))]
+            {
+                None
+            }
+        },
+        ..Default::default()
+    };
+
+    let md_default = MyData::default();
+
+    assert!(
+        std::fs::metadata(CONFIG_FILE_PATH).is_err(),
+        "precondition: no config file"
+    );
+
+    let config = Config::from_options(CONFIG_FILE_PATH, options, md_default).unwrap();
+
+    assert_eq!(
+        config.data,
+        MyData::default(),
+        "post_test: config == defaults"
+    );
+
+    let md = std::fs::metadata(CONFIG_FILE_PATH);
+    log::error!("md is {:?}", md);
+    assert!(md.is_err(), "should not have created config file");
 }

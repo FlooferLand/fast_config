@@ -1,4 +1,6 @@
 use std::path::PathBuf;
+#[allow(unused)]
+use serde::de::value::Error;
 use thiserror::Error;
 use crate::ConfigFormat;
 
@@ -70,6 +72,17 @@ pub enum ConfigError {
 	#[error(transparent)]
 	UnknownFormat(UnknownFormatError)
 }
+impl From<std::io::Error> for ConfigError {
+	fn from(item: std::io::Error) -> Self {
+		ConfigError::IoError(item) 
+	}
+}
+
+impl From<DataParseError> for ConfigError {
+	fn from(item: DataParseError) -> Self {
+		ConfigError::DataParseError(item) 
+	}
+}
 
 #[derive(Error, Debug)]
 pub enum ConfigSaveError {
@@ -83,4 +96,11 @@ pub enum ConfigSaveError {
 	#[error("{}", .0)]
 	SerializationError(String)
 }
+
+impl From<std::io::Error> for ConfigSaveError {
+	fn from(item: std::io::Error) -> Self {
+		ConfigSaveError::IoError(item) 
+	}
+}
+
 

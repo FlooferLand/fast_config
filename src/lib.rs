@@ -6,13 +6,12 @@ mod extensions;
 mod format_dependant;
 mod utils;
 
+use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use serde::{Serialize, Deserialize};
-
 
 // This release ----------------------------------------------------------------
 // .. Nothing to do!
@@ -24,8 +23,6 @@ use serde::{Serialize, Deserialize};
 // This project is being rewritten
 // -----------------------------------------------------------------------------
 
-
-
 #[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
 compile_error!("You must install at least one format feature: `json5`, `toml`, or `yaml`");
 // ^ --- HEY, user! --- ^
@@ -33,15 +30,13 @@ compile_error!("You must install at least one format feature: `json5`, `toml`, o
 // `fast_config = { version = "..", features = ["json5"] }` in your cargo.toml file.
 // You can simply replace that "json5" with any of the stated above if you want other formats.
 
-
 // Bug testing
 #[cfg(test)]
 mod tests;
 
-
 // Separated things
+#[allow(unused)]
 pub use error_messages::*;
-
 
 /// Enum used to configure the [`Config`]s file format.
 ///
@@ -52,7 +47,7 @@ pub use error_messages::*;
 pub enum ConfigFormat {
     JSON5,
     TOML,
-    YAML
+    YAML,
 }
 impl ConfigFormat {
     /// Mainly used to convert file extensions into [`ConfigFormat`]s <br/>
@@ -68,25 +63,26 @@ impl ConfigFormat {
     /// );
     /// ```
     pub fn from_extension(ext: &OsStr) -> Option<Self> {
-        let ext = ext.to_ascii_lowercase()
+        let ext = ext
+            .to_ascii_lowercase()
             .to_string_lossy()
             .replace('\u{FFFD}', "");
-                
+
         // Matching
         match ext.as_str() {
             "json5" | "json" => Some(ConfigFormat::JSON5),
-            "toml"           => Some(ConfigFormat::TOML),
-            "yaml"  | "yml"  => Some(ConfigFormat::YAML),
-            _ => None
+            "toml" => Some(ConfigFormat::TOML),
+            "yaml" | "yml" => Some(ConfigFormat::YAML),
+            _ => None,
         }
     }
 }
 impl Display for ConfigFormat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let output = match self {
-            ConfigFormat::JSON5  => "json5",
-            ConfigFormat::TOML   => "toml",
-            ConfigFormat::YAML   => "yaml"
+            ConfigFormat::JSON5 => "json5",
+            ConfigFormat::TOML => "toml",
+            ConfigFormat::YAML => "yaml",
         };
         write!(f, "{output}")
     }
@@ -96,7 +92,6 @@ impl Default for ConfigFormat {
         format_dependant::get_first_enabled_feature()
     }
 }
-
 
 /// Used to configure the [`Config`] object
 ///
@@ -113,7 +108,7 @@ impl Default for ConfigFormat {
 /// If you don't select a format *(Option::None)* it will try to guess the format
 /// based on the file extension and enabled features. <br/>
 /// If this step fails, an [`UnknownFormatError`] will be returned.
-/// 
+///
 /// - `save_on_drop` - Attempts to save your config when it's dropped, ignoring any errors.
 ///
 /// # More options are to be added later!
@@ -161,14 +156,14 @@ impl Default for ConfigFormat {
 pub struct ConfigSetupOptions {
     pub pretty: bool,
     pub format: Option<ConfigFormat>,
-	pub save_on_drop: bool
+    pub save_on_drop: bool,
 }
 impl Default for ConfigSetupOptions {
     fn default() -> Self {
         Self {
             pretty: true,
             format: None,
-			save_on_drop: false
+            save_on_drop: false,
         }
     }
 }
@@ -178,7 +173,7 @@ impl Default for ConfigSetupOptions {
 pub struct InternalOptions {
     pub pretty: bool,
     pub format: ConfigFormat,
-	pub save_on_drop: bool
+    pub save_on_drop: bool,
 }
 impl TryFrom<ConfigSetupOptions> for InternalOptions {
     /// This function converts a [`ConfigSetupOptions`] into an internally-used [`InternalOptions`].
@@ -191,20 +186,17 @@ impl TryFrom<ConfigSetupOptions> for InternalOptions {
         // Getting the formatting language.
         let format = match options.format {
             Some(format) => format,
-            None => {
-                Err("The file format could not be guessed! It appears to be None!")?
-            }
+            None => Err("The file format could not be guessed! It appears to be None!")?,
         };
 
         // Constructing a converted type
         Ok(Self {
             pretty: options.pretty,
             format,
-			save_on_drop: options.save_on_drop
+            save_on_drop: options.save_on_drop,
         })
     }
 }
-
 
 /// The main class you use to create/access your configuration files!
 ///
@@ -242,17 +234,22 @@ impl TryFrom<ConfigSetupOptions> for InternalOptions {
 ///
 /// *If you wish to implement them yourself I'd recommend reading the Serde docs on it*
 ///
-pub struct Config<D> where for<'a> D: Deserialize<'a> + Serialize {
+pub struct Config<D>
+where
+    for<'a> D: Deserialize<'a> + Serialize,
+{
     pub data: D,
     pub path: PathBuf,
-    pub options: InternalOptions
+    pub options: InternalOptions,
 }
 
-impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
+impl<D> Config<D>
+where
+    for<'a> D: Deserialize<'a> + Serialize,
+{
     /// Constructs and returns a new config object using the default options.
     ///
     /// If there is a file at `path`, the file will be opened. <br/>
-    /// If there's not a file at `path`, the file will automatically be generated.
     ///
     /// - `path`: Takes in a path to where the config file is or should be located.
     /// If the file has no extension, the crate will attempt to guess the extension from one available format `feature`.
@@ -268,8 +265,6 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
 
     /// Constructs and returns a new config object from a set of custom options.
     ///
-    /// If there's not a file at `path`, the file will automatically be generated.
-    ///
     /// - `path`: Takes in a path to where the config file is or should be located. <br/>
     /// If the file has no extension, and there is no `format` selected in your `options`,
     /// the crate will attempt to guess the extension from one available format `feature`s.
@@ -282,12 +277,20 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
     /// - `data`: Takes in a struct that inherits [`Serialize`] and [`Deserialize`]
     /// You have to make this struct yourself, construct it, and pass it in.
     /// More info is provided at [`Config`].
-    pub fn from_options(path: impl AsRef<Path>, options: ConfigSetupOptions, data: D) -> Result<Config<D>, error::ConfigError> {
+    pub fn from_options(
+        path: impl AsRef<Path>,
+        options: ConfigSetupOptions,
+        data: D,
+    ) -> Result<Config<D>, error::ConfigError> {
         Self::construct(path, options, data)
     }
 
     // Main, private constructor
-    fn construct(path: impl AsRef<Path>, mut options: ConfigSetupOptions, mut data: D) -> Result<Config<D>, error::ConfigError> {
+    fn construct(
+        path: impl AsRef<Path>,
+        mut options: ConfigSetupOptions,
+        mut data: D,
+    ) -> Result<Config<D>, error::ConfigError> {
         let mut path = PathBuf::from(path.as_ref());
 
         // Setting up variables
@@ -295,7 +298,9 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         let first_enabled_feature = format_dependant::get_first_enabled_feature();
         let guess_from_feature = || {
             if enabled_features.len() > 1 {
-                Err(error::ConfigError::UnknownFormat(error::UnknownFormatError::new(None, enabled_features.clone())))
+                Err(error::ConfigError::UnknownFormat(
+                    error::UnknownFormatError::new(None, enabled_features.clone()),
+                ))
             } else {
                 Ok(Some(first_enabled_feature))
             }
@@ -308,11 +313,9 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
                     // - Based on the extension
                     match ConfigFormat::from_extension(extension) {
                         Some(value) => Some(value),
-                        None => {
-                            guess_from_feature()?
-                        }
+                        None => guess_from_feature()?,
                     }
-                },
+                }
                 _ => {
                     // - Guessing based on the enabled features
                     guess_from_feature()?
@@ -325,7 +328,7 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             Ok(value) => value,
             Err(message) => {
                 return Err(error::ConfigError::UnknownFormat(
-                    error::UnknownFormatError::new(Some(message), enabled_features)
+                    error::UnknownFormatError::new(Some(message), enabled_features),
                 ));
             }
         };
@@ -335,9 +338,8 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
             path.set_extension(options.format.to_string());
         }
 
-        // Making sure there's a config file
+        // Reading from the file if a file was found
         if let Ok(mut file) = fs::File::open(&path) {
-            // Reading from the file if a file was found
             let mut content = String::new();
             if let Err(err) = file.read_to_string(&mut content) {
                 return Err(error::ConfigError::InvalidFileEncoding(err, path));
@@ -349,32 +351,17 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
                 data = value;
             } else {
                 return Err(error::ConfigError::DataParseError(
-                    error::DataParseError::Deserialize(options.format, content)
+                    error::DataParseError::Deserialize(options.format, content),
                 ));
             };
-        } else {
-            // Creating the directories leading up to the config file
-            match path.parent() {
-                Some(dirs) => {
-                    if let Err(err) = fs::create_dir_all(dirs) {
-                        return Err(error::ConfigError::IoError(err));
-                    }
-                },
-                None => {}
-            }
-
-            // Creating the config file itself
-            // (should never fail due to the code above)
-            if let Err(err) = fs::File::create(&path) {
-                return Err(error::ConfigError::IoError(err));
-            }
         }
 
-        // Creating the Config object
+        // Returning the Config object
+
         Ok(Self {
             data,
             path,
-            options
+            options,
         })
     }
 
@@ -397,28 +384,14 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         match to_string {
             // If the conversion was successful
             Ok(data) => {
-                match fs::File::create(&self.path) {
-                    // File created successfully
-                    Ok(mut file) => {
-                        // Writing data to the writer
-                        if let Err(err) = write!(file, "{data}") {
-                            return Err(error::ConfigSaveError::IoError(err));
-                        }
-                    },
-                    // File could not be created
-                    Err(_) => {
-                        // Try fixing it by creating any missing parent directories
-                        if let Some(parent_dir) = self.path.parent() {
-                            let _ = fs::create_dir_all(parent_dir);
-                        }
-
-                        // Attempt to create the file again before throwing an error
-                        if let Err(err) = fs::File::create(&self.path) {
-                            return Err(error::ConfigSaveError::IoError(err));
-                        }
-                    }
+                if let Some(parent_dir) = self.path.parent() {
+                    let _ = fs::create_dir_all(parent_dir)?;
                 };
-            },
+
+                let mut file = fs::File::create(&self.path)?;
+
+                write!(file, "{data}")?;
+            }
             // If the conversion failed
             Err(e) => {
                 // This error triggering sometimes seems to mean a data type you're using in your
@@ -429,18 +402,22 @@ impl<D> Config<D> where for<'a> D: Deserialize<'a> + Serialize {
         Ok(())
     }
 
-	/// Gets the name of the config file
-	pub fn filename(&self) -> String {
-		self.path.file_name().unwrap()
-			.to_string_lossy()
-			.to_string()
-	}
+    /// Gets the name of the config file
+    pub fn filename(&self) -> String {
+        self.path.file_name().unwrap().to_string_lossy().to_string()
+    }
 }
 
-impl<D> Drop for Config<D> where for<'a> D: Deserialize<'a> + Serialize  {
+impl<D> Drop for Config<D>
+where
+    for<'a> D: Deserialize<'a> + Serialize,
+{
+    // Risky do do this file I/O while app is trying to exit...
+    // Might be better to move this option to shortly after constructing the [`Config`],
+    // but then the option would have to have a different name, would not be saving any changes made while the app was running...
     fn drop(&mut self) {
         if self.options.save_on_drop {
-			let _ = self.save();
-		}
+            let _ = self.save();
+        }
     }
 }
