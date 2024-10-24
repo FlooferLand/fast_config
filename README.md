@@ -22,12 +22,13 @@ and
 But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planned to be added later.
 
 ### Useful teleports:
-- *[Click here to view the **[version conversion guide]**, 
-    helping you update your code to the newest breaking/major version](https://github.com/FlooferLand/fast_config/blob/main/CONVERSION_TUTORIAL.md)*
+- *[Migrating to a newer version of the crate](https://github.com/FlooferLand/fast_config/blob/main/CONVERSION_TUTORIAL.md)*
 
-- *[Click here to view **[code examples]**](#examples)*
+- *[Code examples](#examples)*
 
-- *[Click here to jump to the **[Getting Started]** section](#getting-started)*
+- *[Getting Started](#getting-started)*
+
+- *[Things that need work (for contributors!)](./TODO.md)*
 
 
 ## What is this crate?

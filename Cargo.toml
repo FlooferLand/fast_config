@@ -1,6 +1,6 @@
 [package]
 name = "fast_config"
-version = "1.1.4"
+version = "1.2.0"
 edition = "2021"
 authors = ["FlooferLand"]
 description = "A small and simple multi-format crate to handle config files"
@@ -29,15 +29,14 @@ log = "0.4.19"
 thiserror = "1.0.40"
 
 # Optional
-json5 = { version = "0.4.1",  optional = true }
+json5 = { version = "0.4.1", optional = true }
 toml  = { version = "0.8.19", optional = true }
-serde_yml = { version = "0.0.12",  optional = true }
-
-# Optional deps
+serde_yml = { version = "0.0.12", optional = true }
 serde_json = { version = "1.0.99", optional = true }
 
 [features]
 default = []
+json = ["dep:serde_json"]
 json5 = ["dep:json5", "dep:serde_json"]
 toml  = ["dep:toml"]
 yaml  = ["dep:serde_yml"]

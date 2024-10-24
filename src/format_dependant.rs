@@ -4,12 +4,13 @@ use crate::{ConfigFormat, InternalOptions};
 use crate::extensions::GenericResult;
 
 // Fixes an unused warning when the user hasn't selected any format
-#[cfg(any(feature = "json5", feature = "toml", feature = "yaml"))]
+#[cfg(any(feature = "json", feature = "json5", feature = "toml", feature = "yaml"))]
 use crate::extensions::ResultGeneralize;
 
 // Getting the enabled features via code
 pub fn get_enabled_features() -> Vec<ConfigFormat> {
     let mut vector = Vec::new();
+    #[cfg(feature = "json")] vector.push(ConfigFormat::JSON);
     #[cfg(feature = "json5")] vector.push(ConfigFormat::JSON5);
     #[cfg(feature = "toml")]  vector.push(ConfigFormat::TOML);
     #[cfg(feature = "yaml")]  vector.push(ConfigFormat::YAML);
@@ -17,6 +18,7 @@ pub fn get_enabled_features() -> Vec<ConfigFormat> {
 }
 
 // Getting a singular enabled feature
+// SAFETY: Should only be used if there is exactly one feature enabled
 pub fn get_first_enabled_feature() -> ConfigFormat {
     let features = get_enabled_features();
     if let Some(first) = features.first() {
@@ -38,12 +40,17 @@ pub fn get_first_enabled_feature() -> ConfigFormat {
 // Creates a new string from an existing data object (Serialization)
 pub fn to_string<D>(value: &D, options: &InternalOptions) -> GenericResult<String> where D: Serialize {
     match options.format {
-        #[cfg(feature = "json5")]
-        ConfigFormat::JSON5 => {
+        #[cfg(feature = "json")]
+        ConfigFormat::JSON => {
             match options.pretty {
                 true => serde_json::to_string_pretty(value).generalize(),
-                false => json5::to_string(value).generalize()
+                false => serde_json::to_string(value).generalize()
             }
+        },
+        
+        #[cfg(feature = "json5")]
+        ConfigFormat::JSON5 => {
+            json5::to_string(value).generalize()
         },
 
         #[cfg(feature = "toml")]
@@ -68,8 +75,9 @@ pub fn to_string<D>(value: &D, options: &InternalOptions) -> GenericResult<Strin
             }
         },
 
-        #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))]
-        _ => Err("Format feature not enabled!".to_string())
+        // Note: This is here to stop unused pattern warns/errors
+        #[cfg(not(all(feature = "json", feature = "json5", feature = "toml", feature = "yaml")))]
+        _ => Err(format!("Missing feature for format \"{}\". Try enabling it in your Cargo.toml", options.format))
     }
 }
 
@@ -78,6 +86,10 @@ pub fn to_string<D>(value: &D, options: &InternalOptions) -> GenericResult<Strin
 pub fn from_string<D>(value: &String, format: &ConfigFormat) -> GenericResult<D> where D: DeserializeOwned {
     let value = value.as_str();
     match format {
+        #[cfg(feature = "json")]
+        ConfigFormat::JSON =>
+            serde_json::from_str::<D>(value).generalize(),
+        
         #[cfg(feature = "json5")]
         ConfigFormat::JSON5 =>
             json5::from_str::<D>(value).generalize(),
@@ -90,8 +102,9 @@ pub fn from_string<D>(value: &String, format: &ConfigFormat) -> GenericResult<D>
         ConfigFormat::YAML =>
             serde_yml::from_str::<D>(value).generalize(),
 
-        #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))]
-        _ => Err("Format feature not enabled!".to_string())
+        // Note: This is here to stop unused pattern warns/errors
+        #[cfg(not(all(feature = "json", feature = "json5", feature = "toml", feature = "yaml")))]
+        _ => Err(format!("Missing feature for format \"{}\". Try enabling it in your Cargo.toml", format))
     }
 }
 

@@ -13,22 +13,12 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-// This release ----------------------------------------------------------------
-// .. Nothing to do!
-// Next release ----------------------------------------------------------------
-// TODO: Make JSON, TOML, and YAML keep comments after being written to
-// TODO: Attempt to compress TOML, and YAML when pretty is turned off.
-// TODO: Add in a "from_string" method and an "empty" constructor
-// PS: -------------------------------------------------------------------------
-// This project is being rewritten
-// -----------------------------------------------------------------------------
-
-#[cfg(not(any(feature = "json5", feature = "toml", feature = "yaml")))]
-compile_error!("You must install at least one format feature: `json5`, `toml`, or `yaml`");
+#[cfg(not(any(feature = "json", feature = "json5", feature = "toml", feature = "yaml")))]
+compile_error!("You must install at least one format feature: `json`, `json5`, `toml`, or `yaml`");
 // ^ --- HEY, user! --- ^
 // To do this, you can replace `fast_config = ".."` with
-// `fast_config = { version = "..", features = ["json5"] }` in your cargo.toml file.
-// You can simply replace that "json5" with any of the stated above if you want other formats.
+// `fast_config = { version = "..", features = ["json"] }` in your cargo.toml file.
+// You can simply replace that "json" with any of the stated above if you want other formats.
 
 // Bug testing
 #[cfg(test)]
@@ -42,25 +32,34 @@ pub use error_messages::*;
 ///
 /// You can use it in a [`ConfigSetupOptions`], inside [`Config::from_options`]
 ///
-/// ## /!\ Make sure to enable the feature flag for a format before using it! /!\
+/// ## ⚠️ Make sure to enable the feature flag for a format before using it!
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ConfigFormat {
+    JSON,
     JSON5,
     TOML,
     YAML,
 }
 impl ConfigFormat {
     /// Mainly used to convert file extensions into [`ConfigFormat`]s <br/>
+    /// Also chooses the correct extension for both JSON types based on the enabled feature. _(ex: if JSON5 is enabled, it chooses it for the "json" file extension)_ <br/>
     /// Returns [`Option::None`] if the string/extension doesn't match any known format.
     ///
     /// # Example:
     /// ```
     /// # use std::ffi::OsStr;
     /// # use fast_config::ConfigFormat;
-    /// assert_eq!(
-    ///     ConfigFormat::from_extension(OsStr::new("json5")).unwrap(),
-    ///     ConfigFormat::JSON5
-    /// );
+    /// if cfg!(feature = "json") {
+    ///     assert_eq!(
+    ///         ConfigFormat::from_extension(OsStr::new("json")).unwrap(),
+    ///         ConfigFormat::JSON
+    ///     );
+    /// } else if cfg!(feature = "json5") {
+    ///     assert_eq!(
+    ///         ConfigFormat::from_extension(OsStr::new("json5")).unwrap(),
+    ///         ConfigFormat::JSON5
+    ///     );
+    /// }
     /// ```
     pub fn from_extension(ext: &OsStr) -> Option<Self> {
         let ext = ext
@@ -68,9 +67,16 @@ impl ConfigFormat {
             .to_string_lossy()
             .replace('\u{FFFD}', "");
 
+        // Special case for JSON5 since it shares a format with JSON
+        if cfg!(feature = "json5") && !cfg!(feature = "json") {
+            if ext == "json" || ext == "json5" {
+                return Some(ConfigFormat::JSON5);
+            }
+        }
+        
         // Matching
         match ext.as_str() {
-            "json5" | "json" => Some(ConfigFormat::JSON5),
+            "json" => Some(ConfigFormat::JSON),
             "toml" => Some(ConfigFormat::TOML),
             "yaml" | "yml" => Some(ConfigFormat::YAML),
             _ => None,
@@ -80,6 +86,7 @@ impl ConfigFormat {
 impl Display for ConfigFormat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let output = match self {
+            ConfigFormat::JSON => "json",
             ConfigFormat::JSON5 => "json5",
             ConfigFormat::TOML => "toml",
             ConfigFormat::YAML => "yaml",
@@ -109,8 +116,6 @@ impl Default for ConfigFormat {
 /// based on the file extension and enabled features. <br/>
 /// If this step fails, an [`UnknownFormatError`] will be returned.
 ///
-/// - `save_on_drop` - Attempts to save your config when it's dropped, ignoring any errors.
-///
 /// # More options are to be added later!
 /// Pass `.. `[`Default::default()`] at the end of your construction
 /// to prevent yourself from getting errors in the future!
@@ -130,7 +135,7 @@ impl Default for ConfigFormat {
 ///     // Creating the options
 ///     let options = ConfigSetupOptions {
 ///         pretty: false,
-///         format: Some(ConfigFormat::JSON5),
+///         format: Some(ConfigFormat::JSON),
 ///         .. Default::default()
 ///     };
 ///
@@ -156,6 +161,9 @@ impl Default for ConfigFormat {
 pub struct ConfigSetupOptions {
     pub pretty: bool,
     pub format: Option<ConfigFormat>,
+
+    #[allow(deprecated)]
+    #[deprecated(note = "This option can result in I/O during program exit and can potentially corrupt config files!\nUse [`Config::save`] while your program is exiting instead!")]
     pub save_on_drop: bool,
 }
 impl Default for ConfigSetupOptions {
@@ -163,7 +171,7 @@ impl Default for ConfigSetupOptions {
         Self {
             pretty: true,
             format: None,
-            save_on_drop: false,
+            #[allow(deprecated)] save_on_drop: false,
         }
     }
 }
@@ -193,7 +201,7 @@ impl TryFrom<ConfigSetupOptions> for InternalOptions {
         Ok(Self {
             pretty: options.pretty,
             format,
-            save_on_drop: options.save_on_drop,
+            #[allow(deprecated)] save_on_drop: options.save_on_drop,
         })
     }
 }
@@ -412,9 +420,6 @@ impl<D> Drop for Config<D>
 where
     for<'a> D: Deserialize<'a> + Serialize,
 {
-    // Risky do do this file I/O while app is trying to exit...
-    // Might be better to move this option to shortly after constructing the [`Config`],
-    // but then the option would have to have a different name, would not be saving any changes made while the app was running...
     fn drop(&mut self) {
         if self.options.save_on_drop {
             let _ = self.save();
