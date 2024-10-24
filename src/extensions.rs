@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::result::Result;
 
 pub type GenericResult<D> = Result<D, String>;
+
 pub trait ResultGeneralize<T, E> where E: Debug {
     fn generalize(self) -> GenericResult<T>;
 }

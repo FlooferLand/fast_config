@@ -9,12 +9,12 @@ use crate::extensions::ResultGeneralize;
 
 // Getting the enabled features via code
 pub fn get_enabled_features() -> Vec<ConfigFormat> {
-    let mut vector = Vec::new();
-    #[cfg(feature = "json")] vector.push(ConfigFormat::JSON);
-    #[cfg(feature = "json5")] vector.push(ConfigFormat::JSON5);
-    #[cfg(feature = "toml")]  vector.push(ConfigFormat::TOML);
-    #[cfg(feature = "yaml")]  vector.push(ConfigFormat::YAML);
-    vector
+    vec![
+        #[cfg(feature = "json")] ConfigFormat::JSON, 
+        #[cfg(feature = "json5")] ConfigFormat::JSON5, 
+        #[cfg(feature = "toml")] ConfigFormat::TOML, 
+        #[cfg(feature = "yaml")] ConfigFormat::YAML,
+    ]
 }
 
 // Getting a singular enabled feature
@@ -24,7 +24,7 @@ pub fn get_first_enabled_feature() -> ConfigFormat {
     if let Some(first) = features.first() {
         // If there is one feature
         *first
-    } else if features.len() == 0 {
+    } else if features.is_empty() {
         // If there is no feature
         panic!("No file formats installed or selected. You must enable at least one format feature");
     } else {
@@ -83,8 +83,7 @@ pub fn to_string<D>(value: &D, options: &InternalOptions) -> GenericResult<Strin
 
 
 // Creates a new data object from a string (Deserialization)
-pub fn from_string<D>(value: &String, format: &ConfigFormat) -> GenericResult<D> where D: DeserializeOwned {
-    let value = value.as_str();
+pub fn from_string<D>(value: &str, format: &ConfigFormat) -> GenericResult<D> where D: DeserializeOwned {
     match format {
         #[cfg(feature = "json")]
         ConfigFormat::JSON =>

@@ -23,7 +23,7 @@ impl Default for MyData {
         Self {
             number: 20,
             subdata: SubData {
-                string: format!("Joe Mama"),
+                string: "Joe Mama".into(),
                 unsigned: 400,
                 boolean: true,
             },
@@ -106,6 +106,7 @@ fn advanced_test() {
         pub format_finder: FormatFinder,
         pub pretty: bool,
     }
+
     impl Case {
         pub fn new(format_finder: FormatFinder, pretty: bool) -> Self {
             Self {
@@ -132,9 +133,9 @@ fn advanced_test() {
             //    FormatFinder::GuessExtension(format.to_string()),
             //    pretty,
             //));
-            cases.push(Case::new(FormatFinder::Config(format.clone()), pretty));
-            #[cfg(not(all(feature = "json", feature = "json5", feature = "toml", feature = "yaml")))]
-            {
+
+            cases.push(Case::new(FormatFinder::Config(*format), pretty));
+            #[cfg(not(all(feature = "json", feature = "json5", feature = "toml", feature = "yaml")))] {
                 cases.push(Case::new(FormatFinder::Feature, pretty));
             }
         }

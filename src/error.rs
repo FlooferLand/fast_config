@@ -72,6 +72,7 @@ pub enum ConfigError {
 	#[error(transparent)]
 	UnknownFormat(UnknownFormatError)
 }
+
 impl From<std::io::Error> for ConfigError {
 	fn from(item: std::io::Error) -> Self {
 		ConfigError::IoError(item) 
@@ -102,5 +103,3 @@ impl From<std::io::Error> for ConfigSaveError {
 		ConfigSaveError::IoError(item) 
 	}
 }
-
-

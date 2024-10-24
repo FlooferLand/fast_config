@@ -23,7 +23,7 @@ impl Default for MyData {
         Self {
             student_debt: 20,
             person: Person {
-                name: format!("Joe Mama"),
+                name: "Joe Mama".into(),
                 age: 400,
                 skill_issue: true
             }
@@ -38,7 +38,7 @@ fn main() {
     // Creating options
     let options = ConfigSetupOptions {
         pretty: false,
-        .. Default::default()
+        ..Default::default()
     };
 
     // Creating a new config struct with our data struct (it can also guess the file extension)
