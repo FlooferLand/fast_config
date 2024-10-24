@@ -14,10 +14,10 @@
 A small, safe, lightweight, and easy-to-use Rust crate to read and write to config files.
 
 Currently only supports:
-[JSON5](https://crates.io/crates/json5),
+[JSON](https://crates.io/crates/serde_json) & [JSON5](https://crates.io/crates/json5),
 [TOML](https://crates.io/crates/toml),
 and
-[YAML](https://crates.io/crates/serde_yaml).
+[YAML](https://crates.io/crates/serde_yml).
 
 But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planned to be added later.
 
@@ -29,9 +29,6 @@ But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planne
 
 - *[Click here to jump to the **[Getting Started]** section](#getting-started)*
 
-<br/>
-
----
 
 ## What is this crate?
 `fast_config` was made to be a faster to set up, more light-weight, statically typed alternative to [config](https://crates.io/crates/config).
