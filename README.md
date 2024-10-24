@@ -28,7 +28,7 @@ But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planne
 
 - *[Getting Started](#getting-started)*
 
-- *[Things that need work (for contributors!)](./TODO.md)*
+- *[Things that need work (for contributors!)](./CONTRIBUTORS.md)*
 
 
 ## What is this crate?
