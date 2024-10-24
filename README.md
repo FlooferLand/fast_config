@@ -33,19 +33,6 @@ But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planne
 
 ---
 
-## NOTE: This project will be rewritten sometime soon
-After coming back to this project I've come to realize the code base is VERY messy. </br>
-I've improved a lot as a Rust developer since making this project, and I've been using it in a couple of my projects. I feel i can do way better.
-
-A conversion guide for the rewrite will be available, as I'll have to convert over my projects as well to use the rewritten `fast_config`.
-
-The rewrite should be smaller, safer, and the source code will most importantly be ***way more readable***.
-
-### - Floof
-
----
-<br/>
-
 ## What is this crate?
 `fast_config` was made to be a faster to set up, more light-weight, statically typed alternative to [config](https://crates.io/crates/config).
 
@@ -137,3 +124,19 @@ Alternatively you could also use `Config::from_settings` to style some things an
 ---
 
 View the [examples](./examples) directory for more advanced examples.
+
+## NOTE: This project will be rewritten sometime
+The code is currently very messy, but I'm too busy with other projects to deal with it. </br>
+I've improved a lot as a Rust developer since the creation of this project and a lot of the ways you interface with it could be better.
+
+Some things I want to do for the rewrite are listed in a comment at the top of [lib.rs](./src/lib.rs)
+Some other ideas I'll have to experiment with:
+- Moving to a trait-based approach where you can slap a `#[derive(FastConfig)]` onto any struct to give it the `save`/`load` functions.
+  This makes the annoying `my_config.data.my_setting` into simply `my_config.my_setting`
+
+A conversion guide for the rewrite will be available, as I'll have to convert over my projects as well to use the rewritten `fast_config`.
+
+The rewrite should be smaller, safer, and the source code will most importantly be ***way more readable***.
+
+---
+<br/>
