@@ -1,10 +1,10 @@
 [package]
 name = "fast_config"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2021"
 authors = ["FlooferLand"]
 description = "A small and simple multi-format crate to handle config files"
-keywords = ["settings", "config", "configuration", "easy", "json5"]
+keywords = ["settings", "config", "configuration", "simple", "json5"]
 categories = ["config"]
 exclude = ["src/tests.rs", "test.cmd"]
 
@@ -21,22 +21,22 @@ all-features = true
 maintenance = { status = "actively-developed" }
 
 [dev-dependencies]
-env_logger = "0.11.5"
+env_logger = "0.11"
 
 [dependencies]
-serde = { version = "1.0.165", features = ["serde_derive", "derive"], optional = false }
-log = "0.4.19"
-thiserror = "1.0.40"
+serde = { version = "1.0", features = ["derive"], optional = false }
+log = "0.4"
+thiserror = "1.0"
 
 # Optional
-json5 = { version = "0.4.1", optional = true }
-toml  = { version = "0.8.19", optional = true }
-serde_yml = { version = "0.0.12", optional = true }
-serde_json = { version = "1.0.99", optional = true }
+json5 = { version = "0.4", optional = true }
+toml  = { version = "0.8", optional = true }
+serde_yml = { version = "0.0", optional = true }
+serde_json = { version = "1.0", optional = true }
 
 [features]
 default = []
-json = ["dep:serde_json"]
+json  = ["dep:serde_json"]
 json5 = ["dep:json5", "dep:serde_json"]
 toml  = ["dep:toml"]
 yaml  = ["dep:serde_yml"]
