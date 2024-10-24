@@ -40,10 +40,11 @@ pub enum ConfigFormat {
     TOML,
     YAML,
 }
+
 impl ConfigFormat {
     /// Mainly used to convert file extensions into [`ConfigFormat`]s <br/>
     /// Also chooses the correct extension for both JSON types based on the enabled feature. _(ex: if JSON5 is enabled, it chooses it for the "json" file extension)_ <br/>
-    /// Returns [`Option::None`] if the string/extension doesn't match any known format.
+    /// Returns [`None`] if the string/extension doesn't match any known format.
     ///
     /// # Example:
     /// ```
@@ -68,10 +69,8 @@ impl ConfigFormat {
             .replace('\u{FFFD}', "");
 
         // Special case for JSON5 since it shares a format with JSON
-        if cfg!(feature = "json5") && !cfg!(feature = "json") {
-            if ext == "json" || ext == "json5" {
-                return Some(ConfigFormat::JSON5);
-            }
+        if cfg!(feature = "json5") && !cfg!(feature = "json") && (ext == "json" || ext == "json5") {
+            return Some(ConfigFormat::JSON5);
         }
         
         // Matching
@@ -83,6 +82,7 @@ impl ConfigFormat {
         }
     }
 }
+
 impl Display for ConfigFormat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let output = match self {
@@ -94,6 +94,7 @@ impl Display for ConfigFormat {
         write!(f, "{output}")
     }
 }
+
 impl Default for ConfigFormat {
     fn default() -> Self {
         format_dependant::get_first_enabled_feature()
@@ -106,15 +107,15 @@ impl Default for ConfigFormat {
 ///
 /// # Attributes
 /// - `pretty` - Makes the contents of the config file more humanly-readable.
-/// When `false`, it will try to compact down the config file data so it takes up less storage space.
-/// I recommend you keep it on unless you know what you're doing as most modern systems have enough
-/// space to handle spaces and newline characters even at scale.
+///   When `false`, it will try to compact down the config file data so it takes up less storage space.
+///   I recommend you keep it on unless you know what you're doing as most modern systems have enough
+///   space to handle spaces and newline characters even at scale.
 ///
 /// - `format` - An [`Option`] containing an enum of type [`ConfigFormat`].
-/// Used to specify the format language to use *(ex: JSON, TOML, etc.)* <br/>
-/// If you don't select a format *(Option::None)* it will try to guess the format
-/// based on the file extension and enabled features. <br/>
-/// If this step fails, an [`UnknownFormatError`] will be returned.
+///   Used to specify the format language to use *(ex: JSON, TOML, etc.)* <br/>
+///   If you don't select a format *(Option::None)* it will try to guess the format
+///   based on the file extension and enabled features. <br/>
+///   If this step fails, an [`UnknownFormatError`] will be returned.
 ///
 /// # More options are to be added later!
 /// Pass `.. `[`Default::default()`] at the end of your construction
@@ -131,32 +132,29 @@ impl Default for ConfigFormat {
 ///     pub some_data: i32
 /// }
 ///
-/// fn main() {
-///     // Creating the options
-///     let options = ConfigSetupOptions {
-///         pretty: false,
-///         format: Some(ConfigFormat::JSON),
-///         .. Default::default()
-///     };
+/// // Creating the options
+/// let options = ConfigSetupOptions {
+///     pretty: false,
+///     format: Some(ConfigFormat::JSON),
+///     .. Default::default()
+/// };
 ///
-///     // Creating the data and setting it's default values
-///     let data = MyData {
-///         some_data: 12345
-///     };
+/// // Creating the data and setting it's default values
+/// let data = MyData {
+///     some_data: 12345
+/// };
 ///
-///     // Creating the config itself
-///     let mut config = Config::from_options("./config/myconfig", options, data).unwrap();
-///     // [.. do stuff here]
-///     # // Cleanup
-///     # match std::fs::remove_dir_all("./config/") {
-///     #     Err(e) => {
-///     #        log::error!("{e}");
-///     #     },
-///     #     Ok(_) => {}
-///     # }
-/// }
+/// // Creating the config itself
+/// let mut config = Config::from_options("./config/myconfig", options, data).unwrap();
+/// // [.. do stuff here]
+/// # // Cleanup
+/// # match std::fs::remove_dir_all("./config/") {
+/// #     Err(e) => {
+/// #        log::error!("{e}");
+/// #     },
+/// #     Ok(_) => {}
+/// # }
 /// ```
-///
 #[derive(Clone, Copy)]
 pub struct ConfigSetupOptions {
     pub pretty: bool,
@@ -166,12 +164,14 @@ pub struct ConfigSetupOptions {
     #[deprecated(note = "This option can result in I/O during program exit and can potentially corrupt config files!\nUse [`Config::save`] while your program is exiting instead!")]
     pub save_on_drop: bool,
 }
+
 impl Default for ConfigSetupOptions {
     fn default() -> Self {
+        #[allow(deprecated)]
         Self {
             pretty: true,
             format: None,
-            #[allow(deprecated)] save_on_drop: false,
+            save_on_drop: false,
         }
     }
 }
@@ -190,6 +190,7 @@ impl TryFrom<ConfigSetupOptions> for InternalOptions {
     /// unless you know what you're doing and accept the risks. <br/>
     /// The signature or behaviour of the function may be modified in the future.
     type Error = String;
+
     fn try_from(options: ConfigSetupOptions) -> Result<Self, Self::Error> {
         // Getting the formatting language.
         let format = match options.format {
@@ -230,13 +231,11 @@ impl TryFrom<ConfigSetupOptions> for InternalOptions {
 ///     pub student_debt: i32,
 /// }
 ///
-/// fn main() {
-///     // Making our data and setting its default values
-///     let data = MyData {
-///         student_debt: 20
-///     };
-///     // ..
-/// }
+/// // Making our data and setting its default values
+/// let data = MyData { 
+///     student_debt: 20
+/// };
+/// // ..
 /// ```
 /// Implementing [`Serialize`] and [`Deserialize`] yourself is quite complicated but will provide the most flexibility.
 ///
@@ -260,11 +259,11 @@ where
     /// If there is a file at `path`, the file will be opened. <br/>
     ///
     /// - `path`: Takes in a path to where the config file is or should be located.
-    /// If the file has no extension, the crate will attempt to guess the extension from one available format `feature`.
+    ///   If the file has no extension, the crate will attempt to guess the extension from one available format `feature`.
     ///
     /// - `data`: Takes in a struct that inherits [`Serialize`] and [`Deserialize`]
-    /// You have to make this struct yourself, construct it, and pass it in.
-    /// More info about it is provided at [`Config`].
+    ///   You have to make this struct yourself, construct it, and pass it in.
+    ///   More info about it is provided at [`Config`].
     ///
     /// If you'd like to configure this object, you should take a look at using [`Config::from_options`] instead.
     pub fn new(path: impl AsRef<Path>, data: D) -> Result<Config<D>, error::ConfigError> {
@@ -274,17 +273,17 @@ where
     /// Constructs and returns a new config object from a set of custom options.
     ///
     /// - `path`: Takes in a path to where the config file is or should be located. <br/>
-    /// If the file has no extension, and there is no `format` selected in your `options`,
-    /// the crate will attempt to guess the extension from one available format `feature`s.
+    ///   If the file has no extension, and there is no `format` selected in your `options`,
+    ///   the crate will attempt to guess the extension from one available format `feature`s.
     //
     /// - `options`: Takes in a [`ConfigSetupOptions`],
-    /// used to configure the format language, styling of the data, and other things. <br/>
-    /// Remember to add `..` [`Default::default()`] at the end of your `options` as more options are
-    /// going to be added to the crate later on.
+    ///   used to configure the format language, styling of the data, and other things. <br/>
+    ///   Remember to add `..` [`Default::default()`] at the end of your `options` as more options are
+    ///   going to be added to the crate later on.
     ///
     /// - `data`: Takes in a struct that inherits [`Serialize`] and [`Deserialize`]
-    /// You have to make this struct yourself, construct it, and pass it in.
-    /// More info is provided at [`Config`].
+    ///   You have to make this struct yourself, construct it, and pass it in.
+    ///   More info is provided at [`Config`].
     pub fn from_options(
         path: impl AsRef<Path>,
         options: ConfigSetupOptions,
@@ -315,7 +314,7 @@ where
         };
 
         // Manual format option  >  file extension  >  guessed feature
-        if options.format == None {
+        if options.format.is_none() {
             options.format = match path.extension() {
                 Some(extension) => {
                     // - Based on the extension
@@ -393,7 +392,7 @@ where
             // If the conversion was successful
             Ok(data) => {
                 if let Some(parent_dir) = self.path.parent() {
-                    let _ = fs::create_dir_all(parent_dir)?;
+                    fs::create_dir_all(parent_dir)?;
                 };
 
                 let mut file = fs::File::create(&self.path)?;

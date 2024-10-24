@@ -14,24 +14,18 @@
 A small, safe, lightweight, and easy-to-use Rust crate to read and write to config files.
 
 Currently only supports:
-[JSON](https://crates.io/crates/serde_json) & [JSON5](https://crates.io/crates/json5),
-[TOML](https://crates.io/crates/toml),
-and
-[YAML](https://crates.io/crates/serde_yml).
+[JSON](https://crates.io/crates/serde_json) & [JSON5](https://crates.io/crates/json5), [TOML](https://crates.io/crates/toml),  and [YAML](https://crates.io/crates/serde_yml).
 
 But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planned to be added later.
 
 ### Useful teleports:
-- *[Migrating to a newer version of the crate](https://github.com/FlooferLand/fast_config/blob/main/CONVERSION_TUTORIAL.md)*
-
-- *[Code examples](#examples)*
-
-- *[Getting Started](#getting-started)*
-
-- *[Things that need work (for contributors!)](./CONTRIBUTORS.md)*
-
+- [Migrating to a newer version of the crate](https://github.com/FlooferLand/fast_config/blob/main/CONVERSION_TUTORIAL.md)
+- [Code examples](#examples)
+- [Getting Started](#getting-started)
+- [Things that need work (for contributors!)](./CONTRIBUTORS.md)
 
 ## What is this crate?
+
 `fast_config` was made to be a faster to set up, more light-weight, statically typed alternative to [config](https://crates.io/crates/config).
 
 It also manages to have its own benefits compared to some other config-reading crates
@@ -46,11 +40,13 @@ and it also provides you with *some* options regarding styling your config files
 - Ridiculously simple to use *(only takes 3 lines of short code to make a config file, write/read something, and save it)*
 
 ### Why not this crate?
-1. It doesn't work if you don't know the way your data will be formatted
-  *(for example if you want your users to be able to have any keys ranging from `key0` to `key9000` in an object)*
+1. It doesn't work if you don't know the way your data will be formatted<br>
+   *(for example if you want your users to be able to have any keys ranging from `key0` to `key9000` in an object)*
 2. It cannot currently understand the RON file format
 3. It cannot currently save comments in config files.
+
 ---
+
 **2** and **3** _are_ going to be addressed with future updates, however.
 
 ### ⚠ Documentation and tests are still being made! ⚠
@@ -65,14 +61,14 @@ anything that isn't working as expected!
 ---
 
 ## Examples:
-```rust,ignore
+```rust
 use fast_config::Config;
 use serde::{Serialize, Deserialize};
 
 // Creating a config struct to store our data
 #[derive(Serialize, Deserialize)]
 pub struct MyData {
-    pub student_debt: i32
+    pub student_debt: i32,
 }
 
 fn main() {
@@ -81,7 +77,7 @@ fn main() {
 
     // Creating our data (default values)
     let data = MyData {
-        student_debt: 20
+        student_debt: 20,
     };
 
     // Creating a new config struct with our data struct
@@ -101,23 +97,20 @@ fn main() {
 
 1. Add the crate to your project via <br/> `cargo add fast_config`
    - Additionally, also add `serde` as it is required!
----
 
 2. Enable the feature(s) for the format(s) you'd like to use <br/>
    - Currently only `json5`, `toml`, and `yaml` are supported <br/>
----
+
 3. Create a struct to hold your data that derives `Serialize` and `Deserialize`
----
+
 4. Create an instance of your data struct
-- Optionally `use` the crate's `Config` type for convenience <br/>
-  `use fast_config::Config;`
----
-5. Use <br/>
+   - Optionally `use` the crate's `Config` type for convenience: `use fast_config::Config;`
+
+5. To create and store your config file(s), use:
    ```rust,ignore
    let my_config = Config::new("./path/to/my_config_file", your_data).unwrap();
    ```
-   to create and store your config file(s)!
-Alternatively you could also use `Config::from_settings` to style some things and manually set the format!
+    Alternatively, you can use `Config::from_settings` to style some things and manually set the format!
 
 ---
 

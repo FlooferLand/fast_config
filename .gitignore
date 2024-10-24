@@ -18,3 +18,4 @@ Cargo.lock
 
 # Useless IDE data
 .idea/
+.vscode/

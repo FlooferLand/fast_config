@@ -12,7 +12,7 @@ use crate::error::{DataParseError, UnknownFormatError};
 // Data parsing error
 impl std::error::Error for DataParseError {}
 impl std::fmt::Display for DataParseError {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
 			// Object to string
 			DataParseError::Serialize(_format) => {
