@@ -57,9 +57,9 @@ pub fn to_string<D>(value: &D, options: &InternalOptions) -> GenericResult<Strin
         #[cfg(feature = "yaml")]
         ConfigFormat::YAML => {
             match options.pretty {
-                true  => serde_yaml::to_string(value).generalize(),
+                true  => serde_yml::to_string(value).generalize(),
                 false => {
-                    let string = serde_yaml::to_string(value);
+                    let string = serde_yml::to_string(value);
                     if string.is_err() {
                         return Err(string.err().unwrap().to_string());
                     }
@@ -88,7 +88,7 @@ pub fn from_string<D>(value: &String, format: &ConfigFormat) -> GenericResult<D>
 
         #[cfg(feature = "yaml")]
         ConfigFormat::YAML =>
-            serde_yaml::from_str::<D>(value).generalize(),
+            serde_yml::from_str::<D>(value).generalize(),
 
         #[cfg(not(all(feature = "json5", feature = "toml", feature = "yaml")))]
         _ => Err("Format feature not enabled!".to_string())
