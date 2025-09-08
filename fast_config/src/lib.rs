@@ -10,8 +10,7 @@ use std::path::Path;
     feature = "toml",
     feature = "yaml"
 )))]
-compile_error!("You must install at least one format feature: `json`, `json5`, `toml`, or `yaml`");
-
+compile_error!("You must enable at least one format feature: `json`, `json5`, `toml`, or `yaml`");
 
 #[cfg(feature = "derive")]
 extern crate fast_config_derive;
@@ -19,7 +18,6 @@ extern crate fast_config_derive;
 /// Derive macro available if serde is built with `features = ["derive"]`.
 #[cfg(feature = "derive")]
 pub use fast_config_derive::FastConfig;
-
 
 /// Enum used to configure the [`Config`]s file format.
 ///
@@ -36,34 +34,32 @@ pub enum Format {
     YAML,
 }
 
-
 /// The main result error type of the crate. <br/>
 /// Each type has it's own documentation.
 #[derive(thiserror::Error, Debug)]
-pub enum Error {	
-	#[error(transparent)]
-	Io(#[from] std::io::Error),
+pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
 
-	#[cfg(feature = "json")]
-	#[error(transparent)]
-	Json(#[from] serde_json::Error),
+    #[cfg(feature = "json")]
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 
-	#[cfg(feature = "json5")]
-	#[error(transparent)]
-	Json5(#[from] json5::Error),
+    #[cfg(feature = "json5")]
+    #[error(transparent)]
+    Json5(#[from] json5::Error),
 
-	#[cfg(feature = "toml")]
-	#[error(transparent)]
-	TomlSerialize(#[from] toml::ser::Error),
-	#[cfg(feature = "toml")]
-	#[error(transparent)]
-	TomlDeserialize(#[from] toml::de::Error),
+    #[cfg(feature = "toml")]
+    #[error(transparent)]
+    TomlSerialize(#[from] toml::ser::Error),
+    #[cfg(feature = "toml")]
+    #[error(transparent)]
+    TomlDeserialize(#[from] toml::de::Error),
 
-	#[cfg(feature = "yaml")]
-	#[error(transparent)]
-	Yaml(#[from] serde_yml::Error),
+    #[cfg(feature = "yaml")]
+    #[error(transparent)]
+    Yaml(#[from] serde_yml::Error),
 }
-
 
 pub trait Config
 where
@@ -72,6 +68,12 @@ where
     fn load(&mut self, path: impl AsRef<Path>, format: Format) -> Result<(), Error>;
     fn save(&self, path: impl AsRef<Path>, format: Format) -> Result<(), Error>;
     fn save_pretty(&self, path: impl AsRef<Path>, format: Format) -> Result<(), Error>;
+    #[cfg(any(
+        feature = "json",
+        feature = "json5",
+        feature = "toml",
+        feature = "yaml"
+    ))]
     fn from_string(content: &str, format: Format) -> Result<Self, Error> {
         let result = match format {
             #[cfg(feature = "json")]
@@ -85,6 +87,12 @@ where
         };
         Ok(result)
     }
+    #[cfg(any(
+        feature = "json",
+        feature = "json5",
+        feature = "toml",
+        feature = "yaml"
+    ))]
     fn to_string(&self, format: Format) -> Result<String, Error> {
         let result = match format {
             #[cfg(feature = "json")]
@@ -98,6 +106,12 @@ where
         };
         Ok(result)
     }
+    #[cfg(any(
+        feature = "json",
+        feature = "json5",
+        feature = "toml",
+        feature = "yaml"
+    ))]
     fn to_string_pretty(&self, format: Format) -> Result<String, Error> {
         let result = match format {
             #[cfg(feature = "json")]
@@ -116,5 +130,3 @@ where
 #[cfg(test)]
 #[cfg(feature = "derive")]
 mod tests;
-
-
