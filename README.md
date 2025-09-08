@@ -63,33 +63,39 @@ anything that isn't working as expected!
 ## Examples:
 ```rust
 use fast_config::Config;
-use serde::{Serialize, Deserialize};
+use fast_config::FastConfig;
+use fast_config::Format;
+use serde::Serialize;
+use serde::Deserialize;
 
 // Creating a config struct to store our data
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, FastConfig)]
 pub struct MyData {
     pub student_debt: i32,
 }
 
 fn main() {
-    // Initializing a logging system (needed to show some warnings/errors)
-    env_logger::init();
 
-    // Creating our data (default values)
-    let data = MyData {
-        student_debt: 20,
-    };
+   let config_path = "test/myconfig.json5";
+   // Creating our data (default values)
+   let mut data = MyData {
+      student_debt: 20
+   };
+   # // use save to create the file for test
+   # data.save(config_path, Format::JSON5).unwrap();
+   // load the data from the file
+   data.load(config_path, Format::JSON5).unwrap();
 
-    // Creating a new config struct with our data struct
-    let mut config = Config::new("./config/myconfig.json5", data).unwrap();
+   // Read/writing to the data
+   println!("I am ${} in debt", data.student_debt);
+   data.student_debt = i32::MAX;
+   println!("Oh no, i am now ${} in debt!!", data.student_debt);
 
-    // Read/writing to the data
-    println!("I am ${} in debt", config.data.student_debt);
-    config.data.student_debt = i32::MAX;
-    println!("Oh no, i am now ${} in debt!!", config.data.student_debt);
+   // Saving it back to the disk
+   data.save(config_path, Format::JSON5).unwrap();
 
-    // Saving it back to the disk
-    config.save().unwrap();
+   // clean up
+   # std::fs::remove_dir_all("test").unwrap();
 }
 ```
 

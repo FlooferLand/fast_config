@@ -1,20 +1,22 @@
-use fast_config::{Config, ConfigSetupOptions};
-use fast_config::error::{ConfigError, DataParseError};
-use serde::{Serialize, Deserialize};
+use fast_config::Config;
+use fast_config::FastConfig;
+use fast_config::Format;
+use serde::Deserialize;
+use serde::Serialize;
 
 // Sub-structs
 #[derive(Serialize, Deserialize)]
 pub struct Person {
     pub name: String,
     pub age: u64,
-    pub skill_issue: bool
+    pub skill_issue: bool,
 }
 
 // Creating a config struct to store our data
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, FastConfig)]
 pub struct MyData {
     pub student_debt: i32,
-    pub person: Person
+    pub person: Person,
 }
 
 // Setting the default values for the data
@@ -25,55 +27,25 @@ impl Default for MyData {
             person: Person {
                 name: "Joe Mama".into(),
                 age: 400,
-                skill_issue: true
-            }
+                skill_issue: true,
+            },
         }
     }
 }
 
 fn main() {
-    // Initializing a logging system (needed to show some warnings/errors)
-    env_logger::init();
+    let config_path = "./config/myconfig.json5";
+    // Creating our data (default values)
+    let mut data = MyData::default();
 
-    // Creating options
-    let options = ConfigSetupOptions {
-        pretty: false,
-        ..Default::default()
-    };
-
-    // Creating a new config struct with our data struct (it can also guess the file extension)
-    let result = Config::from_options(
-        "./config/myconfig",
-        options,
-        MyData::default()
-    );
-
-    // Error matching
-    let mut config = match result {
-        Ok(cfg) => {
-            cfg
-        }
-        Err(error) => {
-            match error {
-                // Failed parsing the config
-                ConfigError::DataParseError(parse_err) => {
-                    match parse_err {
-                        DataParseError::Serialize(format) =>
-                            panic!("Failed to serialize format {format}!"),
-                        DataParseError::Deserialize(format, _string) =>
-                            panic!("Failed to deserialize format {format}!")
-                    }
-                }
-                _ => panic!("Other error!")
-            }
-        }
-    };
+    // load the data from the file
+    data.load(config_path, Format::JSON5).unwrap();
 
     // Read/writing to the data
-    println!("I am ${} in debt", config.data.student_debt);
-    config.data.student_debt = i32::MAX;
-    println!("Oh no, i am now ${} in debt!!", config.data.student_debt);
+    println!("I am ${} in debt", data.student_debt);
+    data.student_debt = i32::MAX;
+    println!("Oh no, i am now ${} in debt!!", data.student_debt);
 
     // Saving it back to the disk
-    config.save().unwrap();
+    data.save(config_path, Format::JSON5).unwrap();
 }
