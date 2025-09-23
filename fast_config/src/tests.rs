@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use crate as fast_config;
-use crate::Config;
 use crate::FastConfig;
 use crate::Format::*;
 

@@ -61,7 +61,7 @@ pub enum Error {
     Yaml(#[from] serde_yml::Error),
 }
 
-pub trait Config
+pub trait FastConfig
 where
     for<'a> Self: Deserialize<'a> + Serialize + Sized,
 {

@@ -62,7 +62,6 @@ anything that isn't working as expected!
 
 ## Examples:
 ```rust
-# use fast_config::Config;
 # use fast_config::FastConfig;
 # use fast_config::Format;
 # use serde::Serialize;
