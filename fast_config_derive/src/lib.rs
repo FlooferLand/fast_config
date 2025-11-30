@@ -1,7 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
-use syn::GenericParam;
 use syn::parse_macro_input;
 
 #[proc_macro_derive(FastConfig)]
@@ -12,30 +11,12 @@ pub fn derive_config(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let ident = &input.ident;
 
-    // Clone generics so we can modify them
-    let mut generics = input.generics.clone();
-    let where_clause = generics.make_where_clause();
-
-    // For every type parameter T, add:
-    //   T: for<'a> Deserialize<'a> + Serialize
-    for param in input.generics.params.iter() {
-        if let GenericParam::Type(ty) = param {
-            let ty_ident = &ty.ident;
-
-            where_clause.predicates.push(syn::parse_quote! {
-                for<'a> #ty_ident: ::serde::Deserialize<'a>
-            });
-
-            where_clause.predicates.push(syn::parse_quote! {
-                #ty_ident: ::serde::Serialize
-            });
-        }
-    }
-
-    let (impl_generics, ty_generics, where_clause_final) = generics.split_for_impl();
-
+    let (impl_generics, ty_generics, _) = input.generics.split_for_impl();
+    let where_clause = quote! { where
+        Self: for<'a> ::serde::Deserialize<'a> + ::serde::Serialize + Sized
+    };
     quote! {
-        impl #impl_generics #crate_path::FastConfig for #ident #ty_generics #where_clause_final {
+        impl #impl_generics #crate_path::FastConfig for #ident #ty_generics #where_clause {
             fn load(&mut self, path: #path_type, format: #crate_path::Format) -> Result<(), #crate_path::Error> {
                 let mut content = String::new();
                 let mut file = std::fs::File::open(path)?;

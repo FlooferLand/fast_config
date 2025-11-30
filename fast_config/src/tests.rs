@@ -8,27 +8,34 @@ use serde::Serialize;
 
 use std::path::PathBuf;
 // Sub-data
-#[derive(Serialize, Deserialize, PartialEq, Default, Debug, FastConfig)]
+#[derive(Default, Debug ,Serialize, Deserialize, PartialEq)]
 pub struct SubData {
     pub string: String,
     pub unsigned: u64,
     pub boolean: bool,
 }
 
-// Data
+// GenericData
 #[derive(Serialize, Deserialize, PartialEq, Debug, FastConfig)]
-pub struct MyData<T>
-{
-    pub number: i32,
+pub struct MyData<T: MyTrait> {
+    pub number: T::AssociatedType,
     pub subdata: T,
 }
-impl<T: FastConfig + Default> Default for MyData<T> {
+impl<T: Default + MyTrait> Default for MyData<T> {
     fn default() -> Self {
         Self {
-            number: 20,
+            number: <T as MyTrait>::AssociatedType::default(),
             subdata: T::default(),
         }
     }
+}
+
+pub trait MyTrait {
+    type AssociatedType: Serialize + for<'a> Deserialize<'a> + PartialEq + std::fmt::Debug + Default;
+}
+
+impl MyTrait for SubData {
+    type AssociatedType = i32;
 }
 
 struct Setup<'a> {

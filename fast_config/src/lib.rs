@@ -63,7 +63,7 @@ pub enum Error {
 
 pub trait FastConfig
 where
-    for<'a> Self: Deserialize<'a> + Serialize + Sized,
+    Self: for<'a> Deserialize<'a> + Serialize + Sized,
 {
     fn load(&mut self, path: impl AsRef<Path>, format: Format) -> Result<(), Error>;
     fn save(&self, path: impl AsRef<Path>, format: Format) -> Result<(), Error>;
