@@ -1,8 +1,7 @@
 use proc_macro::TokenStream;
-use quote::ToTokens;
 use quote::quote;
 use syn::DeriveInput;
-use syn::WherePredicate;
+use syn::GenericParam;
 use syn::parse_macro_input;
 
 #[proc_macro_derive(FastConfig)]
@@ -11,27 +10,32 @@ pub fn derive_config(input: TokenStream) -> TokenStream {
     let path_type = quote! {impl AsRef<std::path::Path>};
 
     let input = parse_macro_input!(input as DeriveInput);
-
     let ident = &input.ident;
-    
-    // Extract generics and where clause
+
+    // Clone generics so we can modify them
     let mut generics = input.generics.clone();
-    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let where_clause = generics.make_where_clause();
 
-    // Add: for<'a> Self: Deserialize<'a> + Serialize
-    let extra = quote! {
-        for<'a> #ident #ty_generics: ::serde::Deserialize<'a> + ::serde::Serialize
-    };
+    // For every type parameter T, add:
+    //   T: for<'a> Deserialize<'a> + Serialize
+    for param in input.generics.params.iter() {
+        if let GenericParam::Type(ty) = param {
+            let ty_ident = &ty.ident;
 
-    let where_clause = if let Some(mut wc) = where_clause.cloned() {
-        wc.predicates.push(syn::parse2(extra).unwrap());
-        wc
-    } else {
-        syn::parse_quote!(where #extra)
-    };
+            where_clause.predicates.push(syn::parse_quote! {
+                for<'a> #ty_ident: ::serde::Deserialize<'a>
+            });
+
+            where_clause.predicates.push(syn::parse_quote! {
+                #ty_ident: ::serde::Serialize
+            });
+        }
+    }
+
+    let (impl_generics, ty_generics, where_clause_final) = generics.split_for_impl();
 
     quote! {
-        impl #impl_generics #crate_path::FastConfig for #ident #ty_generics #where_clause {
+        impl #impl_generics #crate_path::FastConfig for #ident #ty_generics #where_clause_final {
             fn load(&mut self, path: #path_type, format: #crate_path::Format) -> Result<(), #crate_path::Error> {
                 let mut content = String::new();
                 let mut file = std::fs::File::open(path)?;
