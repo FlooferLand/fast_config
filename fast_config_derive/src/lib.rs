@@ -13,7 +13,7 @@ pub fn derive_config(input: TokenStream) -> TokenStream {
 
     let (impl_generics, ty_generics, _) = input.generics.split_for_impl();
     let where_clause = quote! { where
-        Self: for<'a> ::serde::Deserialize<'a> + ::serde::Serialize + Sized
+        Self: for<'a> Deserialize<'a> + Serialize + Sized
     };
     quote! {
         impl #impl_generics #crate_path::FastConfig for #ident #ty_generics #where_clause {
