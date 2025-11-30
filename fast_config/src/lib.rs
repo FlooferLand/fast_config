@@ -125,6 +125,11 @@ where
         };
         Ok(result)
     }
+    fn new(path: impl AsRef<Path>, format: Format) -> Result<Self, Error> {
+        let content = std::fs::read_to_string(path)?;
+        let config = Self::from_string(&content, format)?;
+        Ok(config)
+    }
 }
 
 #[cfg(test)]
