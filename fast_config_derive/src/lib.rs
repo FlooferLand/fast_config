@@ -1,6 +1,8 @@
 use proc_macro::TokenStream;
+use quote::ToTokens;
 use quote::quote;
 use syn::DeriveInput;
+use syn::WherePredicate;
 use syn::parse_macro_input;
 
 #[proc_macro_derive(FastConfig)]
@@ -11,9 +13,25 @@ pub fn derive_config(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let ident = &input.ident;
+    
+    // Extract generics and where clause
+    let mut generics = input.generics.clone();
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+
+    // Add: for<'a> Self: Deserialize<'a> + Serialize
+    let extra = quote! {
+        for<'a> #ident #ty_generics: ::serde::Deserialize<'a> + ::serde::Serialize
+    };
+
+    let where_clause = if let Some(mut wc) = where_clause.cloned() {
+        wc.predicates.push(syn::parse2(extra).unwrap());
+        wc
+    } else {
+        syn::parse_quote!(where #extra)
+    };
 
     quote! {
-        impl #crate_path::FastConfig for #ident {
+        impl #impl_generics #crate_path::FastConfig for #ident #ty_generics #where_clause {
             fn load(&mut self, path: #path_type, format: #crate_path::Format) -> Result<(), #crate_path::Error> {
                 let mut content = String::new();
                 let mut file = std::fs::File::open(path)?;
