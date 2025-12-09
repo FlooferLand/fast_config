@@ -1,15 +1,20 @@
 use proc_macro::TokenStream;
+use proc_macro2;
 use quote::quote;
 use syn::DeriveInput;
 use syn::parse_macro_input;
+use syn::Attribute;
+use syn::Meta;
 
-#[proc_macro_derive(FastConfig)]
+#[proc_macro_derive(FastConfig, attributes(fast_config))]
 pub fn derive_config(input: TokenStream) -> TokenStream {
-    let crate_path = quote! {fast_config};
     let path_type = quote! {impl AsRef<std::path::Path>};
 
     let input = parse_macro_input!(input as DeriveInput);
     let ident = &input.ident;
+    
+    // Extract crate path from attributes, default to "fast_config"
+    let crate_path = extract_crate_path(&input.attrs);
 
     let (impl_generics, ty_generics, _) = input.generics.split_for_impl();
     let where_clause = quote! { where
@@ -46,4 +51,29 @@ pub fn derive_config(input: TokenStream) -> TokenStream {
             }
         }
     }.into()
+}
+
+fn extract_crate_path(attrs: &[Attribute]) -> proc_macro2::TokenStream {
+    for attr in attrs {
+        if attr.path().is_ident("fast_config") {
+            // Parse the attribute content - for #[fast_config(crate = "...")]
+            // parse_args parses what's inside the parentheses
+            if let Ok(meta) = attr.parse_args::<Meta>() {
+                if let Meta::NameValue(name_value) = meta {
+                    if name_value.path.is_ident("crate") {
+                        if let syn::Expr::Lit(syn::ExprLit {
+                            lit: syn::Lit::Str(lit_str),
+                            ..
+                        }) = name_value.value
+                        {
+                            let path_str = lit_str.value();
+                            return syn::parse_str::<proc_macro2::TokenStream>(&path_str)
+                                .unwrap_or_else(|_| quote! { fast_config });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    quote! { fast_config }
 }

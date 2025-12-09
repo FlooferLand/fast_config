@@ -19,9 +19,7 @@ extern crate fast_config_derive;
 #[cfg(feature = "derive")]
 pub use fast_config_derive::FastConfig;
 
-/// Enum used to configure the [`Config`]s file format.
-///
-/// ## ⚠️ Make sure to enable the feature flag for a format!
+/// Enum used to configure the file's format.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Format {
     #[cfg(feature = "json")]
@@ -131,7 +129,6 @@ where
         Ok(config)
     }
 }
-
 #[cfg(test)]
 #[cfg(feature = "derive")]
 mod tests;

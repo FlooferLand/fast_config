@@ -13,8 +13,8 @@
 
 A small, safe, lightweight, and easy-to-use Rust crate to read and write to config files.
 
-Currently only supports:
-[JSON](https://crates.io/crates/serde_json) & [JSON5](https://crates.io/crates/json5), [TOML](https://crates.io/crates/toml),  and [YAML](https://crates.io/crates/serde_yml).
+Currently supports:
+[JSON](https://crates.io/crates/serde_json), [JSON5](https://crates.io/crates/json5), [TOML](https://crates.io/crates/toml), and [YAML](https://crates.io/crates/serde_yml).
 
 But more [Serde](https://serde.rs/)-supported formats *(such as RON)* are planned to be added later.
 
@@ -61,77 +61,199 @@ anything that isn't working as expected!
 ---
 
 ## Examples:
-```rust
-# use fast_config::FastConfig;
-# use fast_config::Format;
-# use serde::Serialize;
-# use serde::Deserialize;
 
-// Creating a config struct to store our data
+### Basic Usage
+
+```rust
+use fast_config::FastConfig;
+use fast_config::Format;
+use serde::Serialize;
+use serde::Deserialize;
+
+// Create a config struct and derive FastConfig
 #[derive(Serialize, Deserialize, FastConfig)]
 pub struct MyData {
     pub student_debt: i32,
 }
 
-
 let config_path = "test/myconfig.json5";
-// Creating our data (default values)
+// Create data with default values
 let mut data = MyData {
    student_debt: 20
 };
-# // use save to create the file for test
-# data.save(config_path, Format::JSON5).unwrap();
-// load the data from the file
-data.load(config_path, Format::JSON5).unwrap();
+// Save to create the file
+data.save(&config_path, Format::JSON5).unwrap();
+// Load the data from the file
+data.load(&config_path, Format::JSON5).unwrap();
 
-// Read/writing to the data
+// Read/write to the data
 println!("I am {}$ in debt", data.student_debt);
 data.student_debt = i32::MAX;
 println!("Oh no, i am now {}$ in debt!!", data.student_debt);
 
-// Saving it back to the disk
-data.save(config_path, Format::JSON5).unwrap();
-
-// clean up
+// Save it back to disk
+data.save(&config_path, Format::JSON5).unwrap();
+# // Clean up
 # std::fs::remove_dir_all("test").unwrap();
+```
 
+### Creating Config from File
+
+```rust
+# use fast_config::FastConfig;
+# use fast_config::Format;
+# use serde::Serialize;
+# use serde::Deserialize;
+# #[derive(Serialize, Deserialize, FastConfig)]
+# pub struct MyData { pub value: i32 }
+# // First, create and save a config file
+# let mut temp = MyData { value: 42 };
+# let config_path = "example_config.json";
+# temp.save(config_path, Format::JSON).unwrap();
+// Create config directly from a file path
+let data = MyData::new(config_path, Format::JSON).unwrap();
+# // Clean up
+# std::fs::remove_file(config_path).unwrap();
+```
+
+### String Serialization
+
+```rust
+# use fast_config::FastConfig;
+# use fast_config::Format;
+# use serde::Serialize;
+# use serde::Deserialize;
+# #[derive(Serialize, Deserialize, FastConfig)]
+# pub struct MyData { pub value: i32 }
+# let data = MyData { value: 42 };
+
+// Convert config to string
+let json_string = data.to_string(Format::JSON).unwrap();
+let pretty_json = data.to_string_pretty(Format::JSON).unwrap();
+
+// Create config from string
+let loaded = MyData::from_string(&json_string, Format::JSON).unwrap();
+```
+
+### Pretty Formatting
+
+```rust
+# use fast_config::FastConfig;
+# use fast_config::Format;
+# use serde::Serialize;
+# use serde::Deserialize;
+# #[derive(Serialize, Deserialize, FastConfig)]
+# pub struct MyData { pub value: i32 }
+# let data = MyData { value: 42 };
+
+// Save with pretty formatting (indented, readable)
+data.save_pretty("config.json", Format::JSON).unwrap();
+# // Clean up
+# std::fs::remove_file("config.json").unwrap();
 ```
 
 ## Getting started
 
-1. Add the crate to your project via <br/> `cargo add fast_config`
-   - Additionally, also add `serde` as it is required!
-
-2. Enable the feature(s) for the format(s) you'd like to use <br/>
-   - Currently only `json5`, `toml`, and `yaml` are supported <br/>
-
-3. Create a struct to hold your data that derives `Serialize` and `Deserialize`
-
-4. Create an instance of your data struct
-   - Optionally `use` the crate's `Config` type for convenience: `use fast_config::Config;`
-
-5. To create and store your config file(s), use:
-   ```rust,ignore
-   let my_config = Config::new("./path/to/my_config_file", your_data).unwrap();
+1. Add the crate to your project:
+   ```bash
+   cargo add fast_config
    ```
-    Alternatively, you can use `Config::from_settings` to style some things and manually set the format!
+   - Also add `serde` with derive features:
+   ```bash
+   cargo add serde --features derive
+   ```
+
+2. Enable the feature(s) for the format(s) you'd like to use in your `Cargo.toml`:
+   ```toml
+   [dependencies]
+   fast_config = { version = "...", features = ["json", "json5", "toml", "yaml", "derive"] }
+   ```
+   - Available formats: `json`, `json5`, `toml`, `yaml`
+   - Enable the `derive` feature to use the `#[derive(FastConfig)]` macro
+
+3. Create a struct to hold your data and derive the necessary traits:
+   ```rust
+   use serde::Serialize;
+   use serde::Deserialize;
+   use fast_config::FastConfig;
+   
+   #[derive(Serialize, Deserialize, FastConfig)]
+   pub struct MyConfig {
+       pub setting: String,
+   }
+   ```
+
+4. Use the trait methods directly on your struct:
+   ```rust
+   # use fast_config::FastConfig;
+   # use fast_config::Format;
+   # use serde::Serialize;
+   # use serde::Deserialize;
+   # #[derive(Serialize, Deserialize, FastConfig)]
+   # pub struct MyConfig { pub setting: String }
+   # // Clean up any existing file first
+   # let _ = std::fs::remove_file("example_getting_started.json");
+   let mut config = MyConfig { setting: "default".into() };
+   let config_path = "example_getting_started.json";
+   config.save(config_path, Format::JSON).unwrap();
+   config.load(config_path, Format::JSON).unwrap();
+   # // Clean up
+   # std::fs::remove_file(config_path).unwrap();
+   ```
 
 ---
 
-View the [examples](./examples) directory for more advanced examples.
+## API Reference
 
-## NOTE: This project will be rewritten sometime
-The code is currently very messy, but I'm too busy with other projects to deal with it. </br>
-I've improved a lot as a Rust developer since the creation of this project and a lot of the ways you interface with it could be better.
+### The `FastConfig` Trait
 
-Some things I want to do for the rewrite are listed in a comment at the top of [lib.rs](./src/lib.rs)
-Some other ideas I'll have to experiment with:
-- Moving to a trait-based approach where you can slap a `#[derive(FastConfig)]` onto any struct to give it the `save`/`load` functions.
-  This makes the annoying `my_config.data.my_setting` into simply `my_config.my_setting`
+The `FastConfig` trait provides methods for loading, saving, and serializing config data. When you derive `FastConfig` on your struct, these methods become available:
 
-A conversion guide for the rewrite will be available, as I'll have to convert over my projects as well to use the rewritten `fast_config`.
+#### File Operations
 
-The rewrite should be smaller, safer, and the source code will most importantly be ***way more readable***.
+- **`load(path, format)`** - Loads config data from a file, replacing the current struct's values
+- **`save(path, format)`** - Saves config data to a file (compact format)
+- **`save_pretty(path, format)`** - Saves config data to a file with pretty formatting (indented, readable)
+
+#### String Operations
+
+- **`from_string(content, format)`** - Creates a new config instance from a string
+- **`to_string(format)`** - Converts config to a compact string representation
+- **`to_string_pretty(format)`** - Converts config to a pretty-formatted string
+
+#### Constructor
+
+- **`new(path, format)`** - Creates a new config instance by loading from a file path
+
+### The `#[derive(FastConfig)]` Macro
+
+The derive macro automatically implements the `FastConfig` trait for your struct. It requires that your struct also derives `Serialize` and `Deserialize` from `serde`.
+
+#### Custom Crate Path
+
+If you're re-exporting `fast_config` under a different name, you can specify the crate path:
+
+```rust,ignore
+use serde::Serialize;
+use serde::Deserialize;
+use fast_config::FastConfig;
+
+#[derive(Serialize, Deserialize, FastConfig)]
+#[fast_config(crate = "my_crate::fast_config")]
+pub struct MyConfig {
+    pub value: i32,
+}
+```
+
+---
+
+View the [tests](./fast_config/src/tests/) directory for more advanced examples.
+
+## Migration Note
+
+The crate now uses a trait-based approach with `#[derive(FastConfig)]`. This makes the API cleaner and more ergonomic - you can now call `save()` and `load()` directly on your config struct instead of wrapping it in a `Config` type.
+
+If you're migrating from an older version, see the [conversion tutorial](./CONVERSION_TUTORIAL.md) for guidance.
 
 ---
 <br/>
