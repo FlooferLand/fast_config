@@ -3,22 +3,74 @@ This file targets helping you switch to the newest version, from the last versio
 
 ___Note:___ You're able to look at the [commit history of this file](https://github.com/FlooferLand/fast_config/commits/main/CONVERSION_TUTORIAL.md) to see past versions of this file, for older versions of the crate.
 
-This tutorial currently targets conversion from **1.1.x** to **1.2.0**.
+This tutorial currently targets conversion from **1.2** to **1.3**.
 
 # Changes
 ___Note:___ Always check the [GitHub version](https://github.com/FlooferLand/fast_config/blob/main/CONVERSION_TUTORIAL.md) of this file,
 as it's the most up to date.
 ---
 
-1.2.0 introduces ordinary JSON using [serde_json](https://crates.io/crates/serde_json) and moves away from JSON5, as the [json5](https://crates.io/crates/json5) crate this project uses hasn't received an update in ~3 years. <br/>
-I don't plan on deprecating JSON5 as that crate still works well enough, though I might move to a better crate in the future.
+1.3 makes it so you now need to derive `FastConfig` for your data struct
 
-### Renames / changes
+This was _(thankfully done)_ by [@vaytea](https://github.com/vaytea) as having to type `config.data` every single time you wanted to write or read to fields was very annoying
 
----
-- `ConfigSetupOptions.save_on_drop` is now deprecated since it can lead to unsafe I/O while your program is exiting. Just use `Config::save` instead. _(thanks to [@bobhy](https://github.com/bobhy) for bringing this ancient piece of code to my attention)_
----
+### Guide
 
-## That's it!
+#### Old:
+```rust
+use fast_config::Config;
+use serde::{Serialize, Deserialize};
 
-You can view the [examples](./examples) directory for examples regarding the new syntax.
+#[derive(Serialize, Deserialize)]
+pub struct MyData {
+    pub student_debt: i32
+}
+
+// Create the data with default values
+let data = MyData {
+    student_debt: 20
+};
+
+// Create a new config struct with our data struct
+let mut config = Config::new("./config/myconfig.json5", data).unwrap();
+
+// Read/write to the data
+println!("I am ${} in debt", config.data.student_debt);
+config.data.student_debt = i32::MAX;
+println!("Oh no, i am now ${} in debt!!", config.data.student_debt);
+
+// Save it back to the disk
+config.save().unwrap();
+```
+
+### New:
+```rust
+use fast_config::FastConfig;
+use fast_config::Format;
+use serde::{Serialize, Deserialize};
+
+// Create a config struct and derive FastConfig
+#[derive(Serialize, Deserialize, FastConfig)]
+pub struct MyData {
+    pub student_debt: i32,
+}
+
+// Create the data with default values
+let mut data = MyData {
+   student_debt: 20
+};
+
+// Save to create the file
+data.save("./config/myconfig.json5", Format::JSON5).unwrap();
+
+// Load from the file
+data.load("./config/myconfig.json5", Format::JSON5).unwrap();
+
+// Read/write to the data
+println!("I am {}$ in debt", data.student_debt);
+data.student_debt = i32::MAX;
+println!("Oh no, i am now {}$ in debt!!", data.student_debt);
+
+// Save it back to the disk
+data.save("./config/myconfig.json5", Format::JSON5).unwrap();
+```
