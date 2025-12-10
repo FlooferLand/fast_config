@@ -3,7 +3,7 @@
 All of the major feats and efforts of contributors to this project!
 
 [Younes Torshizi (@vaytea)](https://github.com/vaytea)
-- Made API more consistent with other crates by using now a derive syntax for configs
+- Made API more consistent with other crates by now using a derive syntax for configs
 - Cleaned up the project
 
 [FlooferLand](https://github.com/FlooferLand)
