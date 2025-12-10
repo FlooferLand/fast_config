@@ -1,14 +1,11 @@
-# Contributing
+# Contributors
 
-View a list of things that need to be done over at [TODO.md](./TODO.md)
+All of the feats and efforts of contributors to this project.
 
-Always write down any breaking changes inside [CONVERSION_TUTORIAL.md](./CONVERSION_TUTORIAL.md)
+[Younes Torshizi (@vaytea)](https://github.com/vaytea)
+- Made API more consistent with other crates by using now a derive syntax for configs
+- Cleaned up the project
 
-Use [test.sh](./scripts/test.sh) or [test.cmd](./scripts/test.cmd) to test the project
-
-### Adding a new format
-
-For the most part, you just need to modify [Cargo.toml](./Cargo.toml) and [format_dependant.rs](./src/format_dependant.rs) <br/>
-There are other cases in the project _(such as checking if ANY of the features is enabled in `lib.rs`)_ where you will need to add your new format's feature.
-
-I would recommend just doing a search for "TOML" and adding your new format wherever the others are referenced
+[FlooferLand](https://github.com/FlooferLand)
+- Started the project
+- Shameless plug I know
