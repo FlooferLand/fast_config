@@ -8,6 +8,9 @@ keywords = ["settings", "config", "configuration", "simple", "json5"]
 categories = ["config"]
 exclude = ["src/tests.rs", "test.cmd"]
 
+[lib]
+doctest = false
+
 # GitHub stuff
 readme = "README.md"
 license = "MIT"
@@ -19,7 +22,6 @@ all-features = true
 
 [badges]
 maintenance = { status = "actively-developed" }
-
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"], optional = false }

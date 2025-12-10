@@ -76,15 +76,16 @@ pub struct MyData {
     pub student_debt: i32,
 }
 
-let config_path = "test/myconfig.json5";
-// Create data with default values
+// Create the data with default values
 let mut data = MyData {
    student_debt: 20
 };
+
 // Save to create the file
-data.save(&config_path, Format::JSON5).unwrap();
-// Load the data from the file
-data.load(&config_path, Format::JSON5).unwrap();
+data.save("test/myconfig.json5", Format::JSON5).unwrap();
+
+// Load from the file
+data.load("test/myconfig.json5", Format::JSON5).unwrap();
 
 // Read/write to the data
 println!("I am {}$ in debt", data.student_debt);
@@ -92,41 +93,18 @@ data.student_debt = i32::MAX;
 println!("Oh no, i am now {}$ in debt!!", data.student_debt);
 
 // Save it back to disk
-data.save(&config_path, Format::JSON5).unwrap();
-# // Clean up
-# std::fs::remove_dir_all("test").unwrap();
+data.save("test/myconfig.json5", Format::JSON5).unwrap();
 ```
 
 ### Creating Config from File
 
 ```rust
-# use fast_config::FastConfig;
-# use fast_config::Format;
-# use serde::Serialize;
-# use serde::Deserialize;
-# #[derive(Serialize, Deserialize, FastConfig)]
-# pub struct MyData { pub value: i32 }
-# // First, create and save a config file
-# let mut temp = MyData { value: 42 };
-# let config_path = "example_config.json";
-# temp.save(config_path, Format::JSON).unwrap();
-// Create config directly from a file path
-let data = MyData::new(config_path, Format::JSON).unwrap();
-# // Clean up
-# std::fs::remove_file(config_path).unwrap();
+let data = MyData::new("example_config.json", Format::JSON).unwrap();
 ```
 
 ### String Serialization
 
 ```rust
-# use fast_config::FastConfig;
-# use fast_config::Format;
-# use serde::Serialize;
-# use serde::Deserialize;
-# #[derive(Serialize, Deserialize, FastConfig)]
-# pub struct MyData { pub value: i32 }
-# let data = MyData { value: 42 };
-
 // Convert config to string
 let json_string = data.to_string(Format::JSON).unwrap();
 let pretty_json = data.to_string_pretty(Format::JSON).unwrap();
@@ -138,18 +116,8 @@ let loaded = MyData::from_string(&json_string, Format::JSON).unwrap();
 ### Pretty Formatting
 
 ```rust
-# use fast_config::FastConfig;
-# use fast_config::Format;
-# use serde::Serialize;
-# use serde::Deserialize;
-# #[derive(Serialize, Deserialize, FastConfig)]
-# pub struct MyData { pub value: i32 }
-# let data = MyData { value: 42 };
-
-// Save with pretty formatting (indented, readable)
+// Saves in a format thats indented and human-readable
 data.save_pretty("config.json", Format::JSON).unwrap();
-# // Clean up
-# std::fs::remove_file("config.json").unwrap();
 ```
 
 ## Getting started
@@ -185,20 +153,11 @@ data.save_pretty("config.json", Format::JSON).unwrap();
 
 4. Use the trait methods directly on your struct:
    ```rust
-   # use fast_config::FastConfig;
-   # use fast_config::Format;
-   # use serde::Serialize;
-   # use serde::Deserialize;
-   # #[derive(Serialize, Deserialize, FastConfig)]
-   # pub struct MyConfig { pub setting: String }
-   # // Clean up any existing file first
-   # let _ = std::fs::remove_file("example_getting_started.json");
    let mut config = MyConfig { setting: "default".into() };
    let config_path = "example_getting_started.json";
    config.save(config_path, Format::JSON).unwrap();
+   config.setting = "something else";
    config.load(config_path, Format::JSON).unwrap();
-   # // Clean up
-   # std::fs::remove_file(config_path).unwrap();
    ```
 
 ---
@@ -227,13 +186,13 @@ The `FastConfig` trait provides methods for loading, saving, and serializing con
 
 ### The `#[derive(FastConfig)]` Macro
 
-The derive macro automatically implements the `FastConfig` trait for your struct. It requires that your struct also derives `Serialize` and `Deserialize` from `serde`.
+The derive macro automatically implements the `FastConfig` trait for your struct. It requires that your struct also derives `Serialize` and `Deserialize` from the [`serde`](https://crates.io/crates/serde) crate.
 
 #### Custom Crate Path
 
 If you're re-exporting `fast_config` under a different name, you can specify the crate path:
 
-```rust,ignore
+```rust
 use serde::Serialize;
 use serde::Deserialize;
 use fast_config::FastConfig;
