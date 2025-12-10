@@ -1,0 +1,15 @@
+[package]
+name = "fast_config_derive"
+version = "0.1.0"
+authors = ["Younes Torshizi <vaytea59@gmail.com>", "FlooferLand"]
+edition = "2024"
+
+[lib]
+name = "fast_config_derive"
+proc-macro = true
+doctest = false
+
+[dependencies]
+proc-macro2 = { version = "1", features = ["proc-macro"] }
+quote = { version = "1", features = ["proc-macro"] }
+syn = { version = "2" }
