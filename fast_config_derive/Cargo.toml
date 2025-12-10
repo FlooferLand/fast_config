@@ -1,8 +1,11 @@
 [package]
 name = "fast_config_derive"
 version = "0.1.0"
-authors = ["Younes Torshizi <vaytea59@gmail.com>", "FlooferLand"]
 edition = "2024"
+authors = ["Younes Torshizi <vaytea59@gmail.com>", "FlooferLand"]
+description = "Derive macro for fast_config"
+keywords = ["settings", "config", "configuration", "macro", "derive"]
+categories = ["config"]
 
 [lib]
 name = "fast_config_derive"
